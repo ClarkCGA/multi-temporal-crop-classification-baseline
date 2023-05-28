@@ -1,0 +1,14 @@
+ipykernel
+jupyterlab
+ipywidgets
+matplotlib
+numpy
+pandas
+opencv
+scikit-learn
+scikit-image
+scipy==1.7.3
+rasterio==1.2.10
+tensorboard
+tqdm
+yaml
