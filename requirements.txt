@@ -7,8 +7,8 @@ pandas
 opencv
 scikit-learn
 scikit-image
-scipy==1.7.3
-rasterio==1.2.10
+scipy
+rasterio
 tensorboard
 tqdm
 yaml
