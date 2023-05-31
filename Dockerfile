@@ -1,35 +1,24 @@
-ARG PYTORCH="2.0.0"
-ARG TORCHVISION = "0.15.0"
-ARG CUDA="11.7"
-
-FROM continuumio/miniconda3:4.8.3
+FROM continuumio/miniconda3:22.11.1
 
 # Install pip, pip-tools, and setuptools
 RUN pip install --no-cache-dir --upgrade pip pip-tools setuptools
 
-# Install basic dependencies and nvidia-container-toolkit
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    ca-certificates \
-    cmake \
-    git \
-    wget \
-    nvidia-container-toolkit \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN nvidia-container-runtime configure --disable-cgroups
-RUN systemctl restart docker
-
-# Install PyTorch with CUDA support
-RUN conda install -y pytorch=${PYTORCH} torchvision=${TORCHVISION} pytorch-cuda=${CUDA} -c pytorch -c nvidia
+# Install PyTorch with CUDA support and openCV
+RUN pip install torch==2.0.0+cu117 torchvision==0.15.1+cu117 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu117
+RUN pip install opencv-python
 
 # Install pip packages from requirements.txt
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+
+RUN apt-get --allow-releaseinfo-change update
+RUN apt-get --allow-releaseinfo-change-suite update
+RUN apt-get update 
 
 RUN mkdir /home/workdir
 WORKDIR /home/workdir
 
 EXPOSE 8888
 
-CMD ["/bin/bash"]
+ENTRYPOINT ["jupyter", "lab", "--ip='0.0.0.0'", "--port=8888", "--no-browser", "--allow-root"]
+#CMD ["/bin/bash"]
