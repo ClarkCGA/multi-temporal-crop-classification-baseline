@@ -3,7 +3,7 @@ from torch import nn
 
 
 class ConvBlock(nn.Module):
-    r"""This module creates a user-defined number of conv+BN+ReLU layers.
+    """This module creates a user-defined number of conv+BN+ReLU layers.
     Args:
         in_channels (int)-- number of input features.
         out_channels (int) -- number of output features.
@@ -101,7 +101,7 @@ class DUC(nn.Module):
         return kernel
 
 class UpconvBlock(nn.Module):
-    r"""
+    """
     Decoder layer decodes the features along the expansive path.
     Args:
         in_channels (int) -- number of input features.

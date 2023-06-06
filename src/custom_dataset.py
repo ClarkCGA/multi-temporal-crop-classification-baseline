@@ -34,7 +34,6 @@ class CropData(Dataset):
         self.usage = usage
         self.dataset_name = dataset_name
         self.split_ratio = split_ratio
-        self.make_deterministic = make_deterministic
         self.apply_normalization = apply_normalization
         self.trans = trans
 
