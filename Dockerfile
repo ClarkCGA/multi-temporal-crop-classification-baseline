@@ -13,12 +13,7 @@ RUN pip install -r requirements.txt
 
 RUN apt-get --allow-releaseinfo-change update
 RUN apt-get --allow-releaseinfo-change-suite update
-RUN apt-get update && apt-get install -y \ 
-libgl1-mesa-glx \
-libopencv-dev \
-libsm6 \
-libxext6 \
-libxrender-dev 
+RUN apt-get update
 
 RUN mkdir /home/workdir
 WORKDIR /home/workdir
