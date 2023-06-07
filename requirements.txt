@@ -11,3 +11,4 @@ tensorboard==2.12.2
 tqdm==4.65.0
 PyYAML==6.0
 geopandas==0.13.0
+click==8.1.3

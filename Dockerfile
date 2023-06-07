@@ -5,7 +5,7 @@ RUN pip install --no-cache-dir --upgrade pip pip-tools setuptools
 
 # Install PyTorch with CUDA support and openCV
 RUN pip install torch==2.0.0+cu117 torchvision==0.15.1+cu117 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu117
-RUN pip install opencv-python
+RUN pip install opencv-python-headless
 
 # Install pip packages from requirements.txt
 COPY requirements.txt .
