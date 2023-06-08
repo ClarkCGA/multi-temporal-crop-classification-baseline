@@ -149,6 +149,7 @@ class ModelCompiler:
         self.num_classes = num_classes
         self.inch = inch
         self.gpu_devices = gpu_devices
+        self.use_sync_bn = use_sync_bn
         self.model_init_type = model_init_type
         self.params_init = params_init
         self.checkpoint_dirpath = None

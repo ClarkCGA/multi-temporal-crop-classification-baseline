@@ -195,21 +195,6 @@ class AdditiveAttentionBlock(nn.Module):
 
 class Unet(nn.Module):
     def __init__(self, n_classes, in_channels, filter_config=None, use_skipAtt=False, dropout_rate=0):
-        """
-        UNet model with optional additive attention between skip connections 
-        for semantic segmentation of multispectral satellite images.
-
-        Args:
-            n_classes (int): Number of output classes.
-            in_channels (int): Number of input channels.
-            filter_config (tuple, optional): Configuration of filters in the contracting path.
-                        Default is None, which uses the configuration (64, 128, 256, 512, 1024, 2048).
-            use_skipAtt (bool, optional): Flag indicating whether to use skip connections with attention.
-                        Default is False.
-            dropout_rate (float, optional): Dropout rate applied to the convolutional layers.
-                        Default is 0.
-
-        """
         super(Unet, self).__init__()
 
         self.in_channels = in_channels
@@ -262,16 +247,7 @@ class Unet(nn.Module):
         self.classifier = nn.Conv2d(filter_config[0], n_classes, kernel_size=1, stride=1, padding=0)  # classNumx224x224
 
     def forward(self, inputs):
-        """
-        Forward pass of the UNet model.
-
-        Args:
-            inputs (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width).
-
-        Returns:
-            torch.Tensor: Output tensor of shape (batch_size, n_classes, height, width).
-
-        """
+        # set_trace()
         e1 = self.encoder_1(inputs)  # batch size x 64 x 224 x 224
         p1 = self.pool(e1)  # batch size x 64 x 112 x 112
 

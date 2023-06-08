@@ -36,20 +36,19 @@ class CropData(Dataset):
         self.split_ratio = split_ratio
         self.apply_normalization = apply_normalization
         self.trans = trans
-        self.kwargs = kwargs
 
         assert self.usage in ["train", "validation", "inference"], "Usage is not recognized."
 
         img_fnames = [Path(dirpath) / f 
                       for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
                       for f in filenames 
-                      if f.endswith(".tif") and "merged" in f]
+                      if f.endswith(".tif") and "merged" in f and "_".join(f.split("_")[1:3]) in train_ids]
         img_fnames.sort()
 
         lbl_fnames = [Path(dirpath) / f 
                       for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
                       for f in filenames 
-                      if f.endswith(".tif") and "mask" in f]
+                      if f.endswith(".tif") and "merged" in f and re.search(r"_\d{3}_\d{3}", f)]
         lbl_fnames.sort()
 
         if self.usage in ["train", "validation"]:
@@ -104,8 +103,6 @@ class CropData(Dataset):
         Support indexing such that dataset[index] can be used to get 
         the (index)th sample.
         """
-        kwargs = self.kwargs
-        
         if self.usage in ["train", "validation"]:
             img_chip = self.img_chips[index]
             lbl_chip = self.lbl_chips[index]
