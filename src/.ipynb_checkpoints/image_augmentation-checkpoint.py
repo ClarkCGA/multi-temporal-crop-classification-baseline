@@ -119,31 +119,32 @@ def flip(img, label, flip_type):
             label --A numpy array of flipped labeled reference (ground truth).
     """
 
-    def diagonal_flip(image):
-        flipped = np.flip(image, 1)
-        flipped = np.flip(flipped, 0)
-        return flipped
+    if not isinstance(img, np.ndarray) or not isinstance(label, np.ndarray):
+        raise ValueError("img and label must be numpy arrays.")
+    if img.ndim != 3:
+        raise ValueError("img must have dimensions (H, W, C).")
+    if label.ndim != 2:
+        raise ValueError("label must have dimensions (H, W).")
+    if not isinstance(flip_type, str):
+        raise ValueError("Flip type must be a string.")
 
-    if isinstance(flip_type, str):
-        # Horizontal flip
-        if flip_type == "h_flip":
-            img = np.flip(img, 0)
-            label = np.flip(label, 0)
+    # Horizontal flip
+    if flip_type == "h_flip":
+        img = np.flip(img, 0)
+        label = np.flip(label, 0)
 
-        # Vertical flip
-        elif flip_type == "v_flip":
-            img = np.flip(img, 1)
-            label = np.flip(label, 1)
+    # Vertical flip
+    elif flip_type == "v_flip":
+        img = np.flip(img, 1)
+        label = np.flip(label, 1)
 
-        # Diagonal flip
-        elif flip_type == "d_flip":
-            img = diagonal_flip(img)
-            label = diagonal_flip(label)
+    # Diagonal flip
+    elif flip_type == "d_flip":
+        img = np.transpose(img, axes=(1, 0))
+        label = np.transpose(label, axes=(1, 0))
 
-        else:
-            raise ValueError("Flip type must be one of: 'h_flip', 'v_flip' or 'd_flip'.")
     else:
-        raise ValueError("Flip type param must be a tuple or list.")
+        raise ValueError("Unsupported flip type. Valid options are: 'h_flip', 'v_flip', 'd_flip'.")
 
     return img.copy(), label.copy()
 

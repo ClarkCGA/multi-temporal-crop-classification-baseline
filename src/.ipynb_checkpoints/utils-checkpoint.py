@@ -10,7 +10,7 @@ import rasterio
 import pickle
 import torch
 import matplotlib.pyplot as plt
-from normalization import do_normalization
+from gfm-segmentation-baseline.normalization import do_normalization
 
 
 def load_data(data_path, is_label=False, apply_normalization=False, dtype=np.float32, verbose=False):

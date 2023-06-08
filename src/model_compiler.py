@@ -1,4 +1,4 @@
-import os
+import os, random
 from pathlib import Path
 from datetime import datetime, timedelta
 import torch
@@ -6,6 +6,8 @@ from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.nn import init
+from train import train_one_epoch
+from validate import validate_one_epoch
 
 
 def get_optimizer(optimizer, params, lr, momentum):
