@@ -88,17 +88,34 @@ class CropData(Dataset):
                                                   total=len(img_fnames)):
                     
                 img_chip = load_data(Path(src_dir) / self.dataset_name / img_fname,
-                                     apply_normalization=self.apply_normalization, 
-                                     is_label=False)
+                                     usage=self.usage,
+                                     is_label=False,
+                                     apply_normalization=self.apply_normalization)
                 img_chip = img_chip.transpose((1, 2, 0))
 
                 lbl_chip = load_data(Path(src_dir) / self.dataset_name / lbl_fname, 
+                                     usage=self.usage,
                                      is_label=True)
 
                 self.img_chips.append(img_chip)
                 self.lbl_chips.append(lbl_chip)
         else:
-            pass
+            self.img_chips = []
+            self.ids = []
+            self.meta_ls = []
+            for img_fname in tqdm.tqdm(img_fnames):
+                img_chip, meta = load_data(Path(src_dir) / self.dataset_name / img_fname,
+                                           usage=self.usage,
+                                           is_label=False,
+                                           apply_normalization=self.apply_normalization)
+                img_chip = img_chip.transpose((1, 2, 0))
+                self.img_chips.append(img_chip)
+
+                self.meta_ls.append(meta)
+
+                img_id = '_'.join(img_fnames[1].stem.split('_')[1:3])
+                self.ids.append(img_id)
+
         
         print(f"------ {self.usage} dataset with {len(self.img_chips)} patches created ------")
 
@@ -144,9 +161,12 @@ class CropData(Dataset):
         
         else:
             img_chip = self.img_chips[index]
+            img_id = self.ids[index]
+            img_meta = self.meta_ls[index]
+            
             img_chip = torch.from_numpy(img_chip.transpose((2, 0, 1))).float()
 
-            return img_chip
+            return img_chip, img_id, img_meta
 
     def __len__(self):
         return len(self.img_chips)

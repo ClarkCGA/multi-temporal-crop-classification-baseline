@@ -13,20 +13,21 @@ import matplotlib.pyplot as plt
 from normalization import do_normalization
 
 
-def load_data(data_path, is_label=False, apply_normalization=False, dtype=np.float32, verbose=False):
+def load_data(data_path, usage, is_label=False, apply_normalization=False, dtype=np.float32, verbose=False):
     r"""
     Open data using gdal, read it as an array and normalize it.
 
     Arguments:
-            data_path (string) -- Full path including filename of the data source we wish to load.
-            is_label (binary) -- If True then the layer is a ground truth (category index) and if
+            data_path (string): Full path including filename of the data source we wish to load.
+            usage (string): Either "train", "validation", "inference".
+            is_label (binary): If True then the layer is a ground truth (category index) and if
                                 set to False the layer is a reflectance band.
-            apply_normalization (binary) -- If true min/max normalization will be applied on each band.
-            dtype (np.dtype) -- Data type of the output image chips.
-            verbose (binary) -- if set to true, print a screen statement on the loaded band.
+            apply_normalization (binary): If true min/max normalization will be applied on each band.
+            dtype (np.dtype): Data type of the output image chips.
+            verbose (binary): if set to true, print a screen statement on the loaded band.
 
     Returns:
-            image -- Returns the loaded image as a 32-bit float numpy ndarray.
+            image: Returns the loaded image as a 32-bit float numpy ndarray.
     """
 
     # Inform user of the file names being loaded from the Dataset.
@@ -42,6 +43,7 @@ def load_data(data_path, is_label=False, apply_normalization=False, dtype=np.flo
             img = src.read(1)
 
         else:
+            meta = src.meta
             if apply_normalization:
                 img = do_normalization(src.read(), bounds=(0, 1), clip_val=1)
                 img = img.astype(dtype)
@@ -49,8 +51,12 @@ def load_data(data_path, is_label=False, apply_normalization=False, dtype=np.flo
                 img = src.read()
                 img = img.astype(dtype)
 
-    return img
+    if usage in ["train", "validation"]:
+        return img
+    else:
+        return img, meta
 
+def load_pred(data_path, apply_normalization=False, dtype=np.float32):
 
 def make_deterministic(seed=None, cudnn=True):
     """
