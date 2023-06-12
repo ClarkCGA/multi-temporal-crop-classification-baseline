@@ -33,10 +33,10 @@ Two opens are provided to interact with the code:
 
 **Option 1 -- step-by-step from a jupyter notebook (Recommended to get familiar with the pipeline)**
     
-    Open the jupyter notebook located at "notebooks/main.ipynb". Modify the "config" dictionary and run the cells as explained in the notebook.
+Open the jupyter notebook located at "notebooks/main.ipynb". Modify the "config" dictionary and run the cells as explained in the notebook.
 
 **Option 2 -- Use the CLI** (To be completed)
     
-    First update the parameters in the "config.yaml" file. Parameters are explained inside the file.
+First update the parameters in the "config.yaml" file. Parameters are explained inside the file.
     
-    Run the command below:
+Run the command below:
