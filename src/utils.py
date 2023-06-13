@@ -56,7 +56,6 @@ def load_data(data_path, usage, is_label=False, apply_normalization=False, dtype
     else:
         return img, meta
 
-def load_pred(data_path, apply_normalization=False, dtype=np.float32):
 
 def make_deterministic(seed=None, cudnn=True):
     """
