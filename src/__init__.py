@@ -7,3 +7,4 @@ from .model_compiler import *
 from .accuracy_metric import *
 from .normalization import *
 from .predict import *
+from .custom_optimizer import *

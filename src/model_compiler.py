@@ -8,15 +8,17 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.nn import init
 from train import train_one_epoch
 from validate import validate_one_epoch
+from custom_optimizer import SAM
 
 
-def get_optimizer(optimizer, params, lr, momentum):
+def get_optimizer(optimizer, model, params, lr, momentum):
     """
     Get an instance of the specified optimizer with the given parameters.
 
     Parameters:
         optimizer (str): The name of the optimizer. Options: 
-                              "sgd", "nesterov", "adam", "amsgrad".
+                              "sgd", "nesterov", "adam", "amsgrad" and "sam".
+        model(nn.Module): Initialized model.
         params (iterable): The parameters to optimize.
         lr (float): The learning rate.
         momentum (float): The momentum factor for optimizers that support it.
@@ -35,6 +37,9 @@ def get_optimizer(optimizer, params, lr, momentum):
         return torch.optim.Adam(params, lr)
     elif optimizer == 'amsgrad':
         return torch.optim.Adam(params, lr, amsgrad=True)
+    elif optimizer == 'sam':
+        base_optimizer = optim.SGD
+        return SAM(model.parameters(), base_optimizer, lr=.008, momentum=momentum)
     else:
         raise ValueError(f"{optimizer} currently not supported, please choose a valid optimizer")
 
@@ -257,8 +262,9 @@ class ModelCompiler:
         writer = SummaryWriter('../')
         lr = lr_init
 
-        optimizer = get_optimizer(optimizer_name,
-                                  filter(lambda p: p.requires_grad, self.model.parameters()),
+        optimizer = get_optimizer(optimizer_name, 
+                                  self.model, 
+                                  filter(lambda p: p.requires_grad, self.model.parameters()), 
                                   lr,
                                   momentum)
 
