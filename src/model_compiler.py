@@ -38,8 +38,9 @@ def get_optimizer(optimizer, model, params, lr, momentum):
     elif optimizer == 'amsgrad':
         return torch.optim.Adam(params, lr, amsgrad=True)
     elif optimizer == 'sam':
-        base_optimizer = optim.SGD
-        return SAM(model.parameters(), base_optimizer, lr=.008, momentum=momentum)
+        #base_optimizer = optim.SGD
+        base_optimizer = optim.Adam
+        return SAM(model.parameters(), base_optimizer, lr=lr, momentum=momentum)
     else:
         raise ValueError(f"{optimizer} currently not supported, please choose a valid optimizer")
 
@@ -351,7 +352,7 @@ class ModelCompiler:
             start_epoch = datetime.now()
 
             train_one_epoch(trainDataset, self.model, criterion, optimizer, 
-                            scheduler, lr_policy, device=self.device, 
+                            scheduler, device=self.device, 
                             train_loss=train_loss)
             validate_one_epoch(valDataset, self.model, criterion, device=self.device, 
                                val_loss=val_loss)

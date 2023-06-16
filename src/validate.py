@@ -1,4 +1,4 @@
-from torch.autograd import Variable
+import torch
 from custom_loss_functions import *
 
 

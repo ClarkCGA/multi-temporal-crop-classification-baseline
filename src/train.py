@@ -1,6 +1,6 @@
-from torch.autograd import Variable
-from custom_loss_functions import *
+import torch
 from torch.nn.modules.batchnorm import _BatchNorm
+from custom_loss_functions import *
 from custom_optimizer import SAM
 
 
@@ -31,7 +31,7 @@ def enable_running_stats(model):
     model.apply(_enable)
 
 
-def train_one_epoch(trainData, model, criterion, optimizer, scheduler, lr_policy, device, train_loss=[]):
+def train_one_epoch(trainData, model, criterion, optimizer, scheduler, device, train_loss=[]):
     r"""
     Train the model.
     Arguments:
@@ -40,7 +40,6 @@ def train_one_epoch(trainData, model, criterion, optimizer, scheduler, lr_policy
             criterion -- Chosen function to calculate loss over training samples.
             optimizer -- Chosen function for optimization.
             scheduler -- Update policy for learning rate decay.
-            lr_policy (str) -- Learning rate decade policy.
             device --(str) Either 'cuda' or 'cpu'.
             train_loss -- (empty list) To record average training loss for each epoch.
             
@@ -101,12 +100,14 @@ def train_one_epoch(trainData, model, criterion, optimizer, scheduler, lr_policy
             loss.backward()
             optimizer.step()
 
-        if lr_policy == "CyclicLR":
+        isCyclicLR = False
+        if type(scheduler) == torch.optim.lr_scheduler.CyclicLR:
             scheduler.step()
+            isCyclicLR = True
 
     print('train loss:{}'.format(epoch_loss / num_train_batches))
 
-    if lr_policy == "CyclicLR":
+    if isCyclicLR:
         print("LR: {}".format(scheduler.get_last_lr()))
 
     if train_loss is not None:
