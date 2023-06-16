@@ -38,8 +38,8 @@ def get_optimizer(optimizer, model, params, lr, momentum):
     elif optimizer == 'amsgrad':
         return torch.optim.Adam(params, lr, amsgrad=True)
     elif optimizer == 'sam':
-        #base_optimizer = optim.SGD
-        base_optimizer = optim.Adam
+        base_optimizer = optim.SGD
+        #base_optimizer = optim.Adam
         return SAM(model.parameters(), base_optimizer, lr=lr, momentum=momentum)
     else:
         raise ValueError(f"{optimizer} currently not supported, please choose a valid optimizer")

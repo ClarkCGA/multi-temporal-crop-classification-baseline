@@ -6,7 +6,6 @@ import numpy.ma as ma
 import cv2
 import random
 from collections.abc import Sequence
-from scipy.ndimage import rotate
 
 
 def center_rotate(img, label, degree):
@@ -60,46 +59,6 @@ def center_rotate(img, label, degree):
     label = np.rint(label)
 
     return img, label
-
-
-# use scipy package if there is issue installing opencv
-def rotate_image_and_label(image, label, angle):
-    """
-    Applies rotation augmentation to an image patch and label.
-
-    Args:
-        image (numpy array) : The input image patch as a numpy array.
-        label (numpy array) : The corresponding label as a numpy array.
-        angle (list of floats) : If the list has exactly two elements they will
-            be considered the lower and upper bounds for the rotation angle
-            (in degrees) respectively. If number of elements are bigger than 2,
-            then one value is chosen randomly as the rotation angle.
-
-    Returns:
-        A tuple containing the rotated image patch and label as numpy arrays.
-    """
-    if isinstance(angle, tuple) or isinstance(angle, list):
-        if len(angle) == 2:
-            rotation_degree = random.uniform(angle[0], angle[1])
-        elif len(angle) > 2:
-            rotation_degree = random.choice(angle)
-        else:
-            raise ValueError("Parameter angle needs at least two elements.")
-    else:
-        raise ValueError(
-            "Rotation bound param for augmentation must be a tuple or list."
-        )
-
-    # Apply rotation augmentation to the image patch
-    rotated_image = rotate(input=image, angle=rotation_degree, axes=(1,0),
-                           reshape=False, mode='reflect')
-
-    # Apply rotation augmentation to the label
-    rotated_label = rotate(input=label, angle=rotation_degree, axes=(1,0),
-                           reshape=False, mode='nearest')
-
-    # Return the rotated image patch and label as a tuple
-    return rotated_image.copy(), rotated_label.copy()
 
 
 def flip(img, label, flip_type):
