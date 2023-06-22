@@ -86,6 +86,7 @@ class BinaryMetrics:
                                        columns=['prediction = 0', 'prediction = 1'])
         return confusionMatrix
 
+    
     def ir(self):
         """
         Imbalance Ratio (IR) is defined as the proportion between positive and negative
@@ -93,42 +94,50 @@ class BinaryMetrics:
         IR = 1 in the balanced case.
         Returns:
                 float
-        """
-        try:
-            ir = (self.tp + self.fn) / (self.fp + self.tn)
+        """     
+        ir = np.divide(self.tp + self.fn, self.tn + self.fp)
 
-        except ZeroDivisionError:
-            ir = (self.tp + self.fn) / (self.fp + self.tn + self.eps)
+        if np.isinf(ir) or np.isnan(ir):
+            ir = np.divide(self.tp + self.fn, self.fp + self.tn + self.eps)
 
         return ir
 
+    
     def accuracy(self):
         """
         Calculate Overall (Global) Accuracy.
         Returns:
             float scalar
-        """
-        try:
-            oa = (self.tp + self.tn) / (self.tp + self.tn + self.fp + self.fn)
+        """       
+        oa = np.divide(self.tp + self.tn, self.tp + self.tn + self.fp + self.fn)
 
-        except ZeroDivisionError:
-            oa = (self.tp + self.tn) / (self.tp + self.tn + self.fp + self.fn + self.eps)
+        if np.isinf(oa) or np.isnan(oa):
+            oa = np.divide(self.tp + self.tn, self.tp + self.tn + self.fp + self.fn + self.eps)
 
         return oa
-
+    
     def precision(self):
         """
         Calculate User’s Accuracy (Positive Prediction Value (PPV) | UA).
         Returns:
             float
         """
-        try:
-            ua = self.tp / (self.tp + self.fp)
+        ua = np.divide(self.tp, self.tp + self.fp, where=(self.tp+self.fp)!=0)
+        invalid_values_mask = np.isnan(ua) | np.isinf(ua)
+    
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in precision computation: {ua[invalid_values_mask]}")
 
-        except ZeroDivisionError:
-            ua = self.tp / (self.tp + self.fp + self.eps)
+        ua = np.where((self.tp+self.fp)!=0, ua, np.divide(self.tp, 
+                                                          self.tp + self.fp + self.eps, 
+                                                          where=(self.tp+self.fp+self.eps)!=0))
+
+        invalid_values_mask = np.isnan(ua) | np.isinf(ua)
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in precision computation after applying epsilon: {ua[invalid_values_mask]}")
 
         return ua
+    
 
     def recall(self):
         """
@@ -136,11 +145,18 @@ class BinaryMetrics:
         Returns:
             float
         """
-        try:
-            pa = self.tp / (self.tp + self.fn)
 
-        except ZeroDivisionError:
-            pa = self.tp / (self.tp + self.fn + self.eps)
+        pa = np.divide(self.tp, self.tp + self.fn, where=(self.tp+self.fn)!=0)
+        invalid_values_mask = np.isnan(pa) | np.isinf(pa)
+    
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in recall computation: {pa[invalid_values_mask]}")
+
+        pa = np.where((self.tp+self.fn)!=0, pa, np.divide(self.tp, self.tp + self.fn + self.eps, where=(self.tp+self.fn+self.eps)!=0))
+    
+        invalid_values_mask = np.isnan(pa) | np.isinf(pa)
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in recall computation after applying epsilon: {pa[invalid_values_mask]}")
 
         return pa
 
@@ -150,11 +166,11 @@ class BinaryMetrics:
         Returns:
              float
         """
-        try:
-            fpr = self.fp / (self.tn + self.fp)
+        
+        fpr = np.divide(self.tp, self.tn + self.fp)
 
-        except ZeroDivisionError:
-            fpr = self.fp / (self.tn + self.fp + self.eps)
+        if np.isinf(fpr) or np.isnan(fpr):
+            ua = np.divide(self.fp, self.tn + self.fp + self.eps)
 
         return fpr
 
@@ -164,11 +180,11 @@ class BinaryMetrics:
         Returns:
             float
         """
+        
+        iou = np.divide(self.tp, self.tp + self.fp + self.fn)
 
-        try:
-            iou = self.tp / (self.tp + self.fp + self.fn)
-        except ZeroDivisionError:
-            iou = self.tp / (self.tp + self.fp + self.fn + self.eps)
+        if np.isinf(iou) or np.isnan(iou):
+            iou = np.divide(self.tp, self.tp + self.fp + self.fn + self.eps)
 
         return iou
 
@@ -178,16 +194,27 @@ class BinaryMetrics:
         Returns:
             float
         """
+        precision = np.divide(self.tp, self.tp + self.fp, where=(self.tp+self.fp)!=0)
+        invalid_values_mask = np.isnan(precision) | np.isinf(precision)
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in precision computation: {precision[invalid_values_mask]}")
+        precision = np.where((self.tp+self.fp)!=0, 
+                             precision, 
+                             np.divide(self.tp, self.tp + self.fp + self.eps, where=(self.tp+self.fp+self.eps)!=0))
 
-        try:
-            precision = self.tp / (self.tp + self.fp)
-            recall = self.tp / (self.tp + self.fn)
-            f1 = (2 * precision * recall) / (precision + recall)
+        recall = np.divide(self.tp, self.tp + self.fn, where=(self.tp+self.fn)!=0)
+        invalid_values_mask = np.isnan(recall) | np.isinf(recall)
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in recall computation: {recall[invalid_values_mask]}")
+        recall = np.where((self.tp+self.fn)!=0, 
+                          recall, 
+                          np.divide(self.tp, self.tp + self.fn + self.eps, where=(self.tp+self.fn+self.eps)!=0))
 
-        except ZeroDivisionError:
-            precision = self.tp / (self.tp + self.fp + self.eps)
-            recall = self.tp / (self.tp + self.fn + self.eps)
-            f1 = (2 * precision * recall) / (precision + recall + self.eps)
+        f1 = np.divide(2 * precision * recall, precision + recall, where=(precision+recall)!=0)
+        invalid_values_mask = np.isnan(f1) | np.isinf(f1)
+        if np.any(invalid_values_mask):
+            print(f"Invalid values encountered in F1 computation: {f1[invalid_values_mask]}")
+        f1 = np.where((precision+recall)!=0, f1, np.divide(2 * precision * recall, precision + recall + self.eps, where=(precision+recall+self.eps)!=0))
 
         return f1
 
@@ -197,8 +224,15 @@ class BinaryMetrics:
         Returns:
             float
         """
+        tp_rate = np.divide(self.tp, self.tp + self.fn)
+        if np.isinf(tp_rate) or np.isnan(tp_rate):
+            tp_rate = np.divide(self.tp, self.tp + self.fn + self.eps)
 
-        return self.tp / (self.tp + self.fn) + self.tn / (self.tn + self.fp) - 1
+        tn_rate = np.divide(self.tn, self.tn + self.fp)
+        if np.isinf(tn_rate) or np.isnan(tn_rate):
+            tn_rate = np.divide(self.tn, self.tn + self.fp + self.eps)
+
+        return tp_rate + tn_rate - 1
 
 
 def do_accuracy_evaluation(eval_data, model, filename, gpu=True):

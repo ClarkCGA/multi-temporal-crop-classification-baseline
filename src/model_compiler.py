@@ -9,6 +9,7 @@ from torch.nn import init
 from train import train_one_epoch
 from validate import validate_one_epoch
 from custom_optimizer import SAM
+from accuracy_metric import do_accuracy_evaluation
 
 
 def get_optimizer(optimizer, model, params, lr, momentum):
@@ -169,11 +170,13 @@ class ModelCompiler:
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if self.device.type == "cuda":
+            self.gpu = True
             print("----------GPU available----------")
             if self.gpu_devices:
                 torch.cuda.set_device(self.gpu_devices[0])
                 self.model = torch.nn.DataParallel(self.model, device_ids=self.gpu_devices)
         else:
+            self.gpu = False
             print('----------No GPU available, using CPU instead----------')
             self.model = self.model.to(device)
 
