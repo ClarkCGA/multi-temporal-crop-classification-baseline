@@ -10,6 +10,7 @@ from train import train_one_epoch
 from validate import validate_one_epoch
 from custom_optimizer import SAM
 from accuracy_metric import do_accuracy_evaluation
+from accuracy_metric2 import do_accuracy_evaluation2
 
 
 def get_optimizer(optimizer, model, params, lr, momentum):
@@ -416,7 +417,8 @@ class ModelCompiler:
 
         start = datetime.now()
 
-        do_accuracy_evaluation(evalDataset, self.model, filename, self.gpu)
+        #do_accuracy_evaluation(evalDataset, self.model, filename, self.gpu)
+        do_accuracy_evaluation2(self.model, evalDataset, self.num_classes, filename)
 
         duration_in_sec = (datetime.now() - start).seconds
         print(

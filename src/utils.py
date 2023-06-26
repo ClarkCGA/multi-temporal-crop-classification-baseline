@@ -10,6 +10,7 @@ import rasterio
 import pickle
 import torch
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
 from normalization import do_normalization
 
 
@@ -78,3 +79,46 @@ def make_deterministic(seed=None, cudnn=True):
     if cudnn:
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
+
+
+def get_labels_distribution(dataset, num_classes=14, ignore_class=0):
+    labels_count = torch.zeros(num_classes)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+
+    for _, label in dataloader:
+        unique, counts = torch.unique(label, return_counts=True)
+        for u, c in zip(unique, counts):
+            if u != ignore_class:
+                labels_count[u] += c
+
+    return labels_count
+
+
+def plot_labels_distribution(labels_count, num_classes=14, ignore_class=0):
+    labels = list(range(num_classes))
+    labels.remove(ignore_class)
+
+    plt.bar([str(i) for i in labels], labels_count[labels].numpy())
+    plt.xlabel("Class Label")
+    plt.ylabel("Frequency")
+    plt.title("Class Distribution (ignoring class {})".format(ignore_class))
+    plt.show()
+
+
+def pickle_dataset(dataset, file_path):
+    try:
+        with open(file_path, "wb") as fp:
+            pickle.dump(dataset, fp)
+        print(f"Dataset pickled and saved to {file_path}")
+    except OSError as e:
+        print(f"Error: could not open file {file_path}: {e}")
+    except pickle.PickleError as e:
+        print(f"Error: could not pickle dataset: {e}")
+
+
+def load_pickled_dataset(file_path):
+    """
+    Load pickled dataset from file path.
+    """
+    dataset = pd.read_pickle(file_path)
+    return dataset
