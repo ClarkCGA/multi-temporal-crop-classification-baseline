@@ -122,3 +122,51 @@ def load_pickled_dataset(file_path):
     """
     dataset = pd.read_pickle(file_path)
     return dataset
+
+
+def show_random_patches(dataset, sample_num, rgb_bands=(3, 2, 1)):
+    """
+    Plots a user-defined number of image chips and the corresponding labels.
+    Arguments:
+    dataset (Dataset object) : Loaded custom dataset.
+    sample_num (int) : Number of pairs of image chips and their corresponding 
+        labels to be plotted.
+    rgb_bands (tuple of int) : List of the rgb bands for visualization indexed 
+        from zero.
+    Note: The order of the input bands is as follows:
+          bands = {0 : "KLS-L band 2 (Blue)",
+                   1 : "HLS-L band 3 (Green)",
+                   2 : "HLS-L band 4 (Red)",
+                   3 : "HLS-L band 5 (NIR)"}
+    """
+    # Make a deep copy of the dataset for static augmentation.
+    static_dataset = list(dataset)
+
+    if len(rgb_bands) != 3 or any(not isinstance(b, int) for b in rgb_bands) or not (1 <= sample_num <= len(static_dataset)):
+        del static_dataset
+        raise ValueError("'sample_num' or 'rgb_bands' are not properly defined")
+
+    # Select random samples
+    sample_indices = np.random.choice(len(static_dataset), size=sample_num, replace=False)
+
+    fig, axs = plt.subplots(nrows=sample_num, ncols=2, figsize=(16, sample_num * 16 / 2), squeeze=False)
+
+    for i, sample_index in enumerate(sample_indices):
+        # Get RGB data and normalize if necessary
+        rgb_data = static_dataset[sample_index][0][list(rgb_bands),:,:].permute(1, 2, 0)
+        if rgb_data.max() > 1:
+            rgb_data = rgb_data.int()
+
+        axs[i, 0].set_title(f'Image Patch #{sample_index}')
+        axs[i, 0].imshow(rgb_data)
+
+        label_data = static_dataset[sample_index][1]
+        im = axs[i, 1].imshow(label_data)
+        axs[i, 1].set_title(f'Label Patch #{sample_index}')
+        
+        # Adding colorbar to each label patch
+        plt.colorbar(im, ax=axs[i, 1])
+
+    plt.tight_layout()
+    plt.show()
+    del static_dataset
