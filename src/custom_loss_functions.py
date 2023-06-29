@@ -20,10 +20,11 @@ class BalancedCrossEntropyLoss(nn.Module):
         Loss tensor according to the specified reduction.
     """
 
-    def __init__(self, ignore_index=-100, reduction="mean", weight_scheme="icr"):
+    def __init__(self, weight=None, ignore_index=-100, reduction="mean", weight_scheme="icr"):
         super(BalancedCrossEntropyLoss, self).__init__()
         self.ignore_index = ignore_index
         self.reduction = reduction
+        self.weight = weight
 
         assert weight_scheme in ["icr", "mcf"], "'weight_scheme' is not recognized."
         self.weight_scheme = weight_scheme
@@ -35,20 +36,27 @@ class BalancedCrossEntropyLoss(nn.Module):
             target (torch.Tensor): Target tensor.
         """
 
-        class_counts = torch.bincount(target.view(-1), minlength=predict.shape[1])
-        # get class weights
-        if self.weight_scheme == "icr":
-            class_weights = 1.0 / torch.sqrt(class_counts.float())
+        if self.weight:
+            if isinstance(self.weight, list):
+                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            if self.ignore_index >= 0:
+                zero_element = torch.tensor([0.]).cuda()
+                self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)              
         else:
-            median_frequency = torch.median(class_counts.float())
-            class_weights = median_frequency / class_counts.float()
-
-        # set weight of ignore index to 0
-        if self.ignore_index >= 0 and self.ignore_index < len(class_weights):
-            class_weights[self.ignore_index] = 0
-
-        # normalize weights
-        class_weights /= torch.sum(class_weights)
+            class_counts = torch.bincount(target.view(-1), minlength=predict.shape[1])
+            # get class weights
+            if self.weight_scheme == "icr":
+                class_weights = 1.0 / torch.sqrt(class_counts.float())
+            else:
+                median_frequency = torch.median(class_counts.float())
+                class_weights = median_frequency / class_counts.float()
+    
+            # set weight of ignore index to 0
+            if self.ignore_index >= 0 and self.ignore_index < len(class_weights):
+                class_weights[self.ignore_index] = 0
+    
+            # normalize weights
+            class_weights /= torch.sum(class_weights)
 
         # apply class weights to loss function
         loss_fn = nn.CrossEntropyLoss(weight=class_weights, ignore_index=self.ignore_index,
@@ -160,7 +168,16 @@ class DiceLoss(nn.Module):
 
         dice = BinaryDiceLoss(**self.kwargs)
         total_loss = 0
-        weight = torch.Tensor([1. / nclass] * nclass).cuda() if self.weight is None else self.weight
+        
+        if self.weight is None:
+            self.weight = torch.Tensor([1. / nclass] * nclass).cuda()
+        else:
+            if isinstance(self.weight, list):
+                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            if self.ignore_index >= 0:
+                zero_element = torch.tensor([0.]).cuda()
+                self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
+        
         predict = F.softmax(predict, dim=1)
 
         for i in range(nclass):
@@ -168,8 +185,8 @@ class DiceLoss(nn.Module):
                 dice_loss = dice(predict[:, i], target[:, i])
 
                 assert weight.shape[0] == nclass, \
-                    'Expected weight tensor with shape [{}], but got[{}]'.format(nclass, weight.shape[0])
-                dice_loss *= weight[i]
+                    'Expected weight tensor with shape [{}], but got[{}]'.format(nclass, self.weight.shape[0])
+                dice_loss *= self.weight[i]
                 total_loss += dice_loss
 
         return total_loss
@@ -187,17 +204,20 @@ class BalancedDiceLoss(nn.Module):
         Loss tensor
     """
 
-    def __init__(self, ignore_index=-100, **kwargs):
+    def __init__(self, weight=None, ignore_index=-100, **kwargs):
         super(BalancedDiceLoss, self).__init__()
         self.kwargs = kwargs
         self.ignore_index = ignore_index
+        self.weight = None
 
     def forward(self, predict, target):
-        class_weights = self.calculate_class_weights(target)
-
-        loss_weight = torch.ones(predict.shape[1], device=predict.device) * 0.00001
-        for i, weight in enumerate(class_weights):
-            loss_weight[i] = weight
+        if self.weight is None:
+            class_weights = self.calculate_class_weights(target)
+            loss_weight = torch.ones(predict.shape[1], device=predict.device) * 0.00001
+            for i, weight in enumerate(class_weights):
+                loss_weight[i] = weight
+        else:
+            loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
 
         loss = DiceLoss(weight=loss_weight, ignore_index=self.ignore_index, **self.kwargs)
 
@@ -230,11 +250,13 @@ class DiceCELoss(nn.Module):
         Loss tensor
     """
 
-    def __init__(self, loss_weight=None, dice_weight=0.5, dice_smooth=1,
+    def __init__(self, weight=None, dice_weight=0.5, dice_smooth=1,
                  dice_p=1, ignore_index=-100):
 
         super(DiceCELoss, self).__init__()
-        self.loss_weight = loss_weight
+        self.weight = weight
+        if self.weight:
+            self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
         self.dice_weight = dice_weight
         self.dice_smooth = dice_smooth
         self.dice_p = dice_p
@@ -264,18 +286,22 @@ class BalancedDiceCELoss(nn.Module):
         Same as DiceCELoss
     """
 
-    def __init__(self, ignore_index=-100, **kwargs):
+    def __init__(self, weight=None, ignore_index=-100, **kwargs):
         super(BalancedDiceCELoss, self).__init__()
         self.ignore_index = ignore_index
         self.kwargs = kwargs
+        self.weight = weight
 
     def forward(self, predict, target):
-        # get class weights
-        class_weights = self.calculate_class_weights(target)
-        loss_weight = torch.ones(predict.shape[1], device=predict.device) * 0.00001
-
-        for i, weight in enumerate(class_weights):
-            loss_weight[i] = weight
+        if self.weight is None:
+            # get class weights
+            class_weights = self.calculate_class_weights(target)
+            loss_weight = torch.ones(predict.shape[1], device=predict.device) * 0.00001
+    
+            for i, weight in enumerate(class_weights):
+                loss_weight[i] = weight
+        else:
+             loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
 
         loss = DiceCELoss(loss_weight=loss_weight, **self.kwargs)
 
@@ -361,12 +387,12 @@ class TverskyFocalLoss(nn.Module):
         tversky = BinaryTverskyFocalLoss(**self.kwargs)
         total_loss = 0
         if self.weight is None:
-            self.weight = torch.Tensor([1. / nclass] * nclass).cuda() if self.weight is None else self.weight
+            self.weight = torch.Tensor([1. / nclass] * nclass).cuda()
         else:
+            if isinstance(self.weight, list):
+                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
             if self.ignore_index >= 0:
                 zero_element = torch.tensor([0.]).cuda()
-                if isinstance(self.weight, list):
-                    self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
                 self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
         
         predict = F.softmax(predict, dim=1)
@@ -410,14 +436,14 @@ class BalancedTverskyFocalLoss(nn.Module):
             ratio = unique_counts.float() / torch.numel(target)
             weight = (1. / ratio) / torch.sum(1. / ratio)
     
-            lossWeight = torch.ones(predict.shape[1]).cuda() * 0.00001
+            loss_weight = torch.ones(predict.shape[1]).cuda() * 0.00001
             for i in range(len(unique)):
-                lossWeight[unique[i]] = weight[i]
+                loss_weight[unique[i]] = weight[i]
         else:
-            lossWeight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
 
         # loss
-        loss = TverskyFocalLoss(weight=lossWeight, ignore_index=self.ignore_index, **self.kwargs)
+        loss = TverskyFocalLoss(weight=loss_weight, ignore_index=self.ignore_index, **self.kwargs)
 
         return loss(predict, target)
 
@@ -440,9 +466,9 @@ class TverskyFocalCELoss(nn.Module):
     def __init__(self, weight=None, tversky_weight=0.5, tversky_smooth=1, tversky_alpha=0.7,
                  tversky_gamma=0.9, ignore_index=-100):
         super(TverskyFocalCELoss, self).__init__() 
-        self.weight = loss_weight
+        self.weight = weight
         if self.weight:
-            self.weight = torch.tensor(self.loss_weight, dtype=torch.float32).cuda()
+            self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
         self.tversky_weight = tversky_weight
         self.tversky_smooth = tversky_smooth
         self.tversky_alpha = tversky_alpha
@@ -476,7 +502,7 @@ class BalancedTverskyFocalCELoss(nn.Module):
     def __init__(self, weight=None, ignore_index=-100, **kwargs):
         super(BalancedTverskyFocalCELoss, self).__init__()
         self.ignore_index = ignore_index
-        self.weight = loss_weight
+        self.weight = weight
         self.kwargs = kwargs
 
     def forward(self, predict, target):
@@ -489,13 +515,13 @@ class BalancedTverskyFocalCELoss(nn.Module):
             ratio = unique_counts.float() / torch.numel(target)
             weight = (1. / ratio) / torch.sum(1. / ratio)
     
-            lossWeight = torch.ones(predict.shape[1]).cuda() * 0.00001
+            loss_weight = torch.ones(predict.shape[1]).cuda() * 0.00001
             for i in range(len(unique)):
-                lossWeight[unique[i]] = weight[i]
+                loss_weight[unique[i]] = weight[i]
         else:
-            lossWeight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
 
-        loss = TverskyFocalCELoss(loss_weight=lossWeight, **self.kwargs)
+        loss = TverskyFocalCELoss(loss_weight=loss_weight, **self.kwargs)
 
         return loss(predict, target)
 
