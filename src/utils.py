@@ -1,5 +1,6 @@
 import os
 import random
+import csv
 import numbers
 import math
 import itertools
@@ -12,6 +13,7 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from normalization import do_normalization
+from pathlib import Path
 
 
 def load_data(data_path, usage, is_label=False, apply_normalization=False, dtype=np.float32, verbose=False):
@@ -170,3 +172,88 @@ def show_random_patches(dataset, sample_num, rgb_bands=(3, 2, 1)):
     plt.tight_layout()
     plt.show()
     del static_dataset
+
+
+def calculate_global_class_weights(src_dir, dataset_name, ignore_index=0, num_classes=14):
+    """
+    Calculate class weights for a dataset of labels with class imbalances.
+
+    This function calculates the class weights based on the global class distribution
+    over the entire dataset based on the inverse frequency ratio formula.
+
+    Parameters:
+    src_dir (str): The source directory where the dataset is located.
+    dataset_name (str): The name of the dataset.
+    ignore_index (int, optional): The class index to be ignored when calculating 
+                                  the class weights. Defaults to 0.
+    num_classes (int, optional): The total number of classes in the dataset. 
+                                 Defaults to 14.
+
+    Returns:
+    numpy array: The class weights for the dataset as an array.
+    """
+    lbl_fnames = [Path(dirpath) / f 
+                      for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / dataset_name) 
+                      for f in filenames 
+                      if f.endswith(".tif") and "mask" in f]
+    lbl_fnames.sort()
+
+    # Initialize the global counts for each class
+    global_counts = np.zeros(num_classes)
+
+    for lbl_fn in lbl_fnames:
+         with rasterio.open(lbl_fn, "r") as src:
+             lbl = src.read(1)
+             mask = lbl != ignore_index
+             unique, unique_counts = np.unique(lbl[mask], return_counts=True)
+
+             # Add the unique_counts from this image to the global_counts
+             for u, uc in zip(unique, unique_counts):
+                 global_counts[u] += uc
+
+    # Ignore the class specified by ignore_index when calculating the ratio and weight
+    valid_indices = np.arange(num_classes) != ignore_index
+    valid_counts = global_counts[valid_indices]
+    ratio = valid_counts.astype(float) / np.sum(valid_counts)
+    weights = (1. / ratio) / np.sum(1. / ratio)
+    
+    return weights
+
+
+def split_dataset(src_dir, dataset_name, split_ratio, out_dir, seed=0):
+
+    lbl_fnames = [Path(dirpath) / f
+                  for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / dataset_name) 
+                  for f in filenames 
+                  if f.endswith(".tif") and "mask" in f]
+    lbl_fnames.sort()
+
+    total_samples = len(lbl_fnames)
+    indices = np.arange(total_samples)
+    split_index = int(total_samples * split_ratio)
+
+    np.random.seed(seed)
+    np.random.shuffle(indices)
+
+    train_indices = indices[:split_index]
+    train_lbl_fnames = [lbl_fnames[i] for i in train_indices]
+    train_ids = [Path(fname).stem.split('.')[0].split('_')[1:] for fname in train_lbl_fnames]
+    train_ids = ["_".join(id) for id in train_ids]
+
+    val_indices = indices[split_index:]
+    val_lbl_fnames = [lbl_fnames[i] for i in val_indices]
+    val_ids = [Path(fname).stem.split('.')[0].split('_')[1:] for fname in val_lbl_fnames]
+    val_ids = ["_".join(id) for id in val_ids]
+
+    # Save train IDs and validation IDs to CSV files
+    with open(Path(out_dir) / 'train_ids.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for id in train_ids:
+            writer.writerow([id])
+            
+    with open(Path(out_dir) / 'val_ids.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for id in val_ids:
+            writer.writerow([id])
+
+    return train_ids, val_ids
