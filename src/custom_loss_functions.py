@@ -25,7 +25,7 @@ class BalancedCrossEntropyLoss(nn.Module):
         self.ignore_index = ignore_index
         self.reduction = reduction
         self.weight = weight
-        if self.weight:
+        if self.weight is not None:
             if isinstance(self.weight, list):
                 self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
             if self.ignore_index >= 0:
@@ -157,7 +157,7 @@ class DiceLoss(nn.Module):
         self.weight = weight
         self.ignore_index = ignore_index
         
-        if self.weight:
+        if self.weight is not None:
             if isinstance(self.weight, list):
                 self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
             if self.ignore_index >= 0:
@@ -210,7 +210,7 @@ class BalancedDiceLoss(nn.Module):
         self.kwargs = kwargs
         self.ignore_index = ignore_index
         self.weight = None
-        if self.weight:
+        if self.weight is not None:
             loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
 
     def forward(self, predict, target):
@@ -256,7 +256,7 @@ class DiceCELoss(nn.Module):
 
         super(DiceCELoss, self).__init__()
         self.weight = weight
-        if self.weight:
+        if self.weight is not None:
             self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
         self.dice_weight = dice_weight
         self.dice_smooth = dice_smooth
@@ -292,7 +292,7 @@ class BalancedDiceCELoss(nn.Module):
         self.ignore_index = ignore_index
         self.kwargs = kwargs
         self.weight = weight
-        if self.weight:
+        if self.weight is not None:
             loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
             
     def forward(self, predict, target):
@@ -374,12 +374,7 @@ class TverskyFocalLoss(nn.Module):
         self.kwargs = kwargs
         self.ignore_index = ignore_index
         self.weight = weight
-        if self.weight:
-            if isinstance(self.weight, list):
-                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
-            if self.ignore_index >= 0:
-                zero_element = torch.tensor([0.]).cuda()
-                self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
+
         
     def forward(self, predict, target):
         nclass = predict.shape[1]
@@ -394,6 +389,12 @@ class TverskyFocalLoss(nn.Module):
         total_loss = 0
         if self.weight is None:
             self.weight = torch.Tensor([1. / nclass] * nclass).cuda()
+        else:
+            if isinstance(self.weight, list):
+                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            if (self.ignore_index >= 0) and (self.weight.shape[0] == (nclass - 1)):
+                zero_element = torch.tensor([0.]).cuda()
+                self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
         
         predict = F.softmax(predict, dim=1)
 
@@ -425,7 +426,7 @@ class BalancedTverskyFocalLoss(nn.Module):
         self.kwargs = kwargs
         self.ignore_index = ignore_index
         self.weight = weight
-        if self.weight:
+        if self.weight is not None:
             loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()           
 
     def forward(self, predict, target):
@@ -466,14 +467,18 @@ class TverskyFocalCELoss(nn.Module):
     def __init__(self, weight=None, tversky_weight=0.5, tversky_smooth=1, tversky_alpha=0.7,
                  tversky_gamma=0.9, ignore_index=-100):
         super(TverskyFocalCELoss, self).__init__() 
+        self.ignore_index = ignore_index
         self.weight = weight
-        if self.weight:
-            self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+        if self.weight is not None:
+            if isinstance(self.weight, list):
+                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            if self.ignore_index >= 0:
+                zero_element = torch.tensor([0.]).cuda()
+                self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
         self.tversky_weight = tversky_weight
         self.tversky_smooth = tversky_smooth
         self.tversky_alpha = tversky_alpha
         self.tversky_gamma = tversky_gamma
-        self.ignore_index = ignore_index
 
     def forward(self, predict, target):
         assert predict.shape[0] == target.shape[0], "predict & target batch size do not match"
@@ -504,8 +509,12 @@ class BalancedTverskyFocalCELoss(nn.Module):
         self.ignore_index = ignore_index
         self.kwargs = kwargs
         self.weight = weight
-        if self.weights:
-            loss_weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+        if self.weight is not None:
+            if isinstance(self.weight, list):
+                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+            if self.ignore_index >= 0:
+                zero_element = torch.tensor([0.]).cuda()
+                self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
 
     def forward(self, predict, target):
         if self.weight is None:
