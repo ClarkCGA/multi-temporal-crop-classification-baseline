@@ -2,10 +2,12 @@ import os, math, random
 from pathlib import Path
 import tqdm
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from utils import load_data
 from image_augmentation import *
+from IPython.core.debugger import set_trace
 
 
 class CropData(Dataset):
@@ -16,6 +18,8 @@ class CropData(Dataset):
         usage (str): can be either train, validate, or test.
         dataset_name (str): Name of the training/validation dataset containing 
                             structured folders for image, label, and mask.
+        csv_path (str): full path to the csv file containing the id of tiles used 
+                        for splitting the dataset into train and validation subsets.
         apply_normalization (binary): decides if normalization should be applied.
         trans (list of str): Transformation or data augmentation methods; list 
                              elements could be chosen from:
@@ -32,35 +36,40 @@ class CropData(Dataset):
         if in the inference phase.
     """
 
-    def __init__(self, src_dir, usage, dataset_name, split_ratio=0.8, 
-                 apply_normalization=False, trans=None, **kwargs):
+    def __init__(self, src_dir, usage, dataset_name, csv_path, split_ratio=0.8, 
+                 apply_normalization=False, normal_strategy="z_value", trans=None, **kwargs):
 
         self.usage = usage
         self.dataset_name = dataset_name
         self.split_ratio = split_ratio
         self.apply_normalization = apply_normalization
+        self.normal_strategy = normal_strategy
         self.trans = trans
         self.kwargs = kwargs
 
         assert self.usage in ["train", "validation", "inference"], "Usage is not recognized."
 
-        img_fnames = [Path(dirpath) / f 
-                      for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
-                      for f in filenames 
-                      if f.endswith(".tif") and "merged" in f]
-        img_fnames.sort()
-
-        lbl_fnames = [Path(dirpath) / f 
-                      for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
-                      for f in filenames 
-                      if f.endswith(".tif") and "mask" in f]
-        lbl_fnames.sort()
+        catalog = pd.read_csv(csv_path, header=None)
+        flag_ids = catalog[0].tolist()
 
         if self.usage in ["train", "validation"]:
+
+            img_fnames = [Path(dirpath) / f
+                          for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
+                          for f in filenames 
+                          if f.endswith(".tif") and ("merged" in f) and ('_'.join(Path(f).stem.split('_')[1:3]) in flag_ids)]
+            img_fnames.sort()
+
+            lbl_fnames = [Path(dirpath) / f 
+                          for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
+                          for f in filenames 
+                          if f.endswith(".tif") and ("mask" in f) and ('_'.join(Path(f).stem.split('_')[1:3]).split(".")[0] in flag_ids)]
+            lbl_fnames.sort()
 
             self.img_chips = []
             self.lbl_chips = []
 
+            """
             total_samples = len(img_fnames)
             indices = np.arange(total_samples)
             split_index = int(total_samples * self.split_ratio)
@@ -83,6 +92,7 @@ class CropData(Dataset):
             else:
                 img_fnames = val_img_fnames
                 lbl_fnames = val_lbl_fnames
+            """
 
             for img_fname, lbl_fname in tqdm.tqdm(zip(img_fnames, lbl_fnames), 
                                                   total=len(img_fnames)):
@@ -90,7 +100,8 @@ class CropData(Dataset):
                 img_chip = load_data(Path(src_dir) / self.dataset_name / img_fname,
                                      usage=self.usage,
                                      is_label=False,
-                                     apply_normalization=self.apply_normalization)
+                                     apply_normalization=self.apply_normalization,
+                                     normal_strategy= self.normal_strategy)
                 img_chip = img_chip.transpose((1, 2, 0))
 
                 lbl_chip = load_data(Path(src_dir) / self.dataset_name / lbl_fname, 
@@ -107,13 +118,14 @@ class CropData(Dataset):
                 img_chip, meta = load_data(Path(src_dir) / self.dataset_name / img_fname,
                                            usage=self.usage,
                                            is_label=False,
-                                           apply_normalization=self.apply_normalization)
+                                           apply_normalization=self.apply_normalization,
+                                           normal_strategy=self.normal_strategy)
                 img_chip = img_chip.transpose((1, 2, 0))
                 self.img_chips.append(img_chip)
 
                 self.meta_ls.append(meta)
 
-                img_id = '_'.join(img_fnames[1].stem.split('_')[1:3])
+                img_id = '_'.join(img_fname.stem.split('_')[1:3])
                 self.ids.append(img_id)
 
         

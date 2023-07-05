@@ -16,7 +16,8 @@ from normalization import do_normalization
 from pathlib import Path
 
 
-def load_data(data_path, usage, is_label=False, apply_normalization=False, dtype=np.float32, verbose=False):
+def load_data(data_path, usage, is_label=False, apply_normalization=False, 
+              normal_strategy="z_value", dtype=np.float32, verbose=False):
     r"""
     Open data using gdal, read it as an array and normalize it.
 
@@ -48,7 +49,7 @@ def load_data(data_path, usage, is_label=False, apply_normalization=False, dtype
         else:
             meta = src.meta
             if apply_normalization:
-                img = do_normalization(src.read(), bounds=(0, 1), clip_val=1)
+                img = do_normalization(src.read(), normal_strategy, bounds=(0, 1), clip_val=1)
                 img = img.astype(dtype)
             else:
                 img = src.read()

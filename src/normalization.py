@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def do_normalization(img, normal_strategy="min_max", bounds=(0, 1), clip_val=None, global_stats=True):
+def do_normalization(img, normal_strategy="z_value", bounds=(0, 1), clip_val=None, global_stats=True):
     """
     Normalize the input image pixels to a user-defined range based on the
     minimum and maximum statistics of each band and optional clip value.
@@ -26,7 +26,8 @@ def do_normalization(img, normal_strategy="min_max", bounds=(0, 1), clip_val=Non
           or (0, 256).
         - Normalization statistics are calculated per band and for each image
           tile separately.
-        - Notice the global statistics are hard-coded for our HLS dataset.
+        - Notice the global statistics are hard-coded for our HLS dataset and only when
+          we use 'global_stats'.
     """
 
     if normal_strategy not in ["min_max", "z_value"]:
@@ -50,8 +51,8 @@ def do_normalization(img, normal_strategy="min_max", bounds=(0, 1), clip_val=Non
 
     elif normal_strategy == "z_value":
         if global_stats:
-            img_mins = [377.9552566, 653.3649778, 702.1219857, 2426.350589] * 3
-            img_stds = [171.4894702, 215.5102906, 364.2939656, 650.935431] * 3
+            img_means = np.array([377.9830716, 653.4058739, 702.1834053, 2573.849324, 2344.568628, 1432.163695] * 3)
+            img_stds = np.array([171.5116587, 215.5407551, 364.3545396, 686.5730746, 769.6448444, 675.9192684] * 3)
         else:
             img_means = np.nanmean(img, axis=(1, 2))
             img_stds = np.nanstd(img, axis=(1, 2))

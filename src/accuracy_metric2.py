@@ -97,116 +97,30 @@ class Evaluator(object):
         # Normalize the confusion matrix by row (i.e., by the true class)
         row_sums = conf_mat_without_unknown.sum(axis=1, keepdims=True)
         conf_mat_normalized = np.divide(conf_mat_without_unknown, row_sums, where=row_sums!=0)
-
+        
+        classes = ["Grassland", "Forest", "Shrubs", "Developed", "Open Water", "Woody Wetlands",
+                   "Winter Wheats", "Other Hay/Non Alfalfa", "Corn", "Soybeans", "Cottons", "Sorghum", "Other Crops"]
+        
         # Create a dataframe for the seaborn heatmap
         df_cm = pd.DataFrame(conf_mat_normalized,
-                            index = ['class_' + str(i) for i in range(1, self.num_class)], 
-                            columns = ['class_' + str(i) for i in range(1, self.num_class)])
-
+                            index = classes, 
+                            columns = classes)
+    
         # Create the figure
         plt.figure(figsize=(self.num_class, self.num_class))
-
+    
         # Use seaborn to plot the heatmap
-        heatmap = sns.heatmap(df_cm, annot=True, fmt=".3f", cmap='Blues', linewidths=.5, cbar=True)
-
+        heatmap = sns.heatmap(df_cm, annot=True, fmt=".3f", cmap='viridis', linewidths=.5, cbar=True)
+    
         # Set the title and labels
         plt.title('Normalized Confusion Matrix')
         plt.xlabel('Predicted label')
         plt.ylabel('Reference label')
-
+    
         # Save the figure
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-
+    
         plt.show()
-    
-    """
-    def plot_confusion_matrix(self):
-        # Remove the first row and column
-        conf_mat_without_unknown = self.confusion_matrix[1:, 1:]
-        
-        # Normalize the confusion matrix by row (i.e., by the true class)
-        row_sums = conf_mat_without_unknown.sum(axis=1, keepdims=True)
-        conf_mat_normalized = np.divide(conf_mat_without_unknown, row_sums, where=row_sums!=0)
-        
-        # Create the figure and axes object
-        fig, ax = plt.subplots(figsize=(self.num_class, self.num_class))  
-
-        # Plot the heatmap
-        im = ax.imshow(conf_mat_normalized, interpolation='nearest', cmap=plt.cm.Blues)
-        plt.title('Normalized Confusion matrix')
-        plt.colorbar(im)
-
-        classes = ['class_' + str(i) for i in range(1, self.num_class+1)]  # start from class_1
-        tick_marks = np.arange(len(classes))
-        plt.xticks(tick_marks, classes, rotation=45)
-        plt.yticks(tick_marks, classes)
-
-        # Define the threshold for deciding text color
-        thresh = conf_mat_normalized.max() / 2.
-
-        # Iterate over the data and create text annotations
-        for i, j in itertools.product(range(conf_mat_normalized.shape[0]), range(conf_mat_normalized.shape[1])):
-            ax.text(j, i, format(conf_mat_normalized[i, j], '.2f'),
-                    horizontalalignment="center",
-                    color="white" if conf_mat_normalized[i, j] > thresh else "black")
-            # Highlight diagonal elements with a red box
-            if i == j:
-                rect = patches.Rectangle((j-0.5, i-0.5), 1, 1, linewidth=2, edgecolor='r', facecolor='none')
-                ax.add_patch(rect)
-
-        plt.tight_layout()
-        plt.ylabel('Reference label')
-        plt.xlabel('Predicted label')
-        plt.show()
-
-    
-    
-    def plot_confusion_matrix(self):
-        # Remove the first row and column
-        conf_mat_without_unknown = self.confusion_matrix[1:, 1:]
-    
-        # Create new matrix with additional row/column for sums
-        conf_mat_extended = np.zeros((conf_mat_without_unknown.shape[0]+1, conf_mat_without_unknown.shape[1]+1))
-        conf_mat_extended[:-1, :-1] = conf_mat_without_unknown
-    
-        # Add sums at the end of rows and columns
-        conf_mat_extended[-1, :-1] = np.sum(conf_mat_without_unknown, axis=0)
-        conf_mat_extended[:-1, -1] = np.sum(conf_mat_without_unknown, axis=1)
-    
-        # Add the total sum to the bottom-right corner of the matrix
-        conf_mat_extended[-1, -1] = np.sum(conf_mat_without_unknown)
-    
-        fig, ax = plt.subplots(figsize=(self.num_class+1, self.num_class+1))  # Create the figure and axes object
-    
-        # Plot the heatmap
-        im = ax.imshow(conf_mat_extended, interpolation='nearest', cmap=plt.cm.Blues)
-        plt.title('Confusion matrix')
-        plt.colorbar(im)
-    
-        classes = ['class_' + str(i) for i in range(1, self.num_class)]  # start from class_1
-        classes.append('Sum')
-        tick_marks = np.arange(len(classes))
-        plt.xticks(tick_marks, classes, rotation=45)
-        plt.yticks(tick_marks, classes)
-    
-        # Define the threshold for deciding text color
-        thresh = conf_mat_extended.max() / 2.
-    
-        # Iterate over the data and create text annotations
-        for i, j in itertools.product(range(conf_mat_extended.shape[0]), range(conf_mat_extended.shape[1])):
-            ax.text(j, i, format(int(conf_mat_extended[i, j]), 'd'),
-                    horizontalalignment="center",
-                    color="white" if conf_mat_extended[i, j] > thresh else "black")
-            # Highlight diagonal elements with a red box (except for the last row/column)
-            if i == j and i < self.num_class - 1:
-                rect = patches.Rectangle((j-0.5, i-0.5), 1, 1, linewidth=2, edgecolor='r', facecolor='none')
-                ax.add_patch(rect)
-    
-        plt.tight_layout()
-        plt.ylabel('Reference label')
-        plt.xlabel('Predicted label')
-        plt.show()
-    """
 
 
     def reset(self):
