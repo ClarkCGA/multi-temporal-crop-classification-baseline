@@ -168,7 +168,7 @@ def re_scale(img, label, scale=(0.75, 1.5), crop_strategy="center"):
     return canvas_img, canvas_label
 
 
-def shift_brightness(img, gamma_range=(0.2, 2.0), shift_subset=(4, 4, 4), patch_shift=False):
+def shift_brightness(img, gamma_range=(0.2, 2.0), shift_subset=(6, 6, 6), patch_shift=False):
     """
     Shift image brightness through gamma correction
 

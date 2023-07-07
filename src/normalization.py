@@ -58,4 +58,11 @@ def do_normalization(img, normal_strategy="z_value", bounds=(0, 1), clip_val=Non
             img_stds = np.nanstd(img, axis=(1, 2))
         normal_img = (img - img_means[:, None, None]) / img_stds[:, None, None]
 
+        # shift the values to the positive range --> [1,+inf)
+        min_vals = np.min(normal_img, axis=(1, 2))
+        for i in range(normal_img.shape[0]):
+            if min_vals[i] < 0:
+                normal_img[i,:,:] -= min_vals[i]
+
+
     return normal_img

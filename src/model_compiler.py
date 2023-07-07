@@ -131,7 +131,7 @@ class PolynomialLR(_LRScheduler):
 
 class ModelCompiler:
 
-    def __init__(self, model, working_dir, out_dir, num_classes, inch, gpu_devices=[0],
+    def __init__(self, model, working_dir, out_dir, num_classes, inch, class_mapping, gpu_devices=[0],
                  model_init_type="kaiming", params_init=None, freeze_params=None):
         r"""
         Train the model.
@@ -143,6 +143,7 @@ class ModelCompiler:
             out_dir (str) -- specific output directory for the current experiment.
             num_classes (int) -- number of output classes based on the classification scheme.
             inch (int) -- number of input channels.
+            class_mapping (dict): A dictionary mapping class indices to class names.
             gpu_devices (list) -- list of GPU indices to use for parallelism if multiple GPUs are available.
                                   Default is set to index 0 for a single GPU.
             model_init_type -- (str) model initialization choice if it's not pre-trained.
@@ -158,6 +159,7 @@ class ModelCompiler:
 
         self.num_classes = num_classes
         self.inch = inch
+        self.class_mapping = class_mapping
         self.gpu_devices = gpu_devices
         self.model_init_type = model_init_type
         self.params_init = params_init
@@ -418,7 +420,7 @@ class ModelCompiler:
         start = datetime.now()
 
         #do_accuracy_evaluation(evalDataset, self.model, filename, self.gpu)
-        do_accuracy_evaluation2(self.model, evalDataset, self.num_classes, filename)
+        do_accuracy_evaluation2(self.model, evalDataset, self.num_classes, self.class_mapping, filename)
 
         duration_in_sec = (datetime.now() - start).seconds
         print(

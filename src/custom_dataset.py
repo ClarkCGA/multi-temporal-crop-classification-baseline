@@ -159,7 +159,7 @@ class CropData(Dataset):
                     img_chip, lbl_chip = center_rotate(img_chip, lbl_chip, deRotate)
                     
                 if random.randint(0, 1) and 'shift_brightness' in self.trans:
-                    bshift_subs = kwargs.get("bshift_subs", (3, 3))
+                    bshift_subs = kwargs.get("bshift_subs", (6, 6, 6))
                     bshift_gamma_range = kwargs.get("bshift_gamma_range", (0.2, 2.0))
                     patch_shift = kwargs.get("patch_shift", True)
                     img_chip = shift_brightness(img_chip, gamma_range=bshift_gamma_range,

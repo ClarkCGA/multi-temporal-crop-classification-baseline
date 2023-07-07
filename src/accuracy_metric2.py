@@ -90,7 +90,7 @@ class Evaluator(object):
             self.confusion_matrix += self._generate_matrix(ref_img[i], 
                                                            pred_img[i])
 
-    def plot_confusion_matrix(self, save_path="confusion_matrix.png"):
+    def plot_confusion_matrix(self, class_mapping, save_path="confusion_matrix.png"):
         # Remove the first row and column
         conf_mat_without_unknown = self.confusion_matrix[1:, 1:]
         
@@ -98,9 +98,8 @@ class Evaluator(object):
         row_sums = conf_mat_without_unknown.sum(axis=1, keepdims=True)
         conf_mat_normalized = np.divide(conf_mat_without_unknown, row_sums, where=row_sums!=0)
         
-        classes = ["Grassland", "Forest", "Shrubs", "Developed", "Open Water", "Woody Wetlands",
-                   "Winter Wheats", "Other Hay/Non Alfalfa", "Corn", "Soybeans", "Cottons", "Sorghum", "Other Crops"]
-        
+        classes = [class_mapping[i] for i in range(1, self.num_class)]
+
         # Create a dataframe for the seaborn heatmap
         df_cm = pd.DataFrame(conf_mat_normalized,
                             index = classes, 
@@ -135,7 +134,26 @@ class Evaluator(object):
         self.confusion_matrix = np.zeros((self.num_class,) * 2)
 
 
-def do_accuracy_evaluation2(model, dataloader, num_classes, out_name=None):
+def do_accuracy_evaluation2(model, dataloader, num_classes, class_mapping, out_name=None):
+    """
+    Evaluate the performance of a trained model on a dataset and calculate various metrics.
+    
+    Args:
+        model (torch.nn.Module): The trained model to be evaluated.
+        dataloader (torch.utils.data.DataLoader): The dataloader for the evaluation dataset.
+        num_classes (int): The number of target classes in the dataset.
+        class_mapping (dict): A dictionary mapping class indices to class names.
+        out_name (str, optional): The path where the evaluation metrics are to be saved. If None, 
+            metrics are not saved. Defaults to None.
+    
+    Returns:
+        dict: A dictionary containing the calculated metrics including Overall Accuracy, 
+            Mean Accuracy, Mean IoU (Intersection over Union), mean Precision, and mean Recall.
+            
+    Notes:
+        The function calculates confusion matrix and plots it using seaborn. If out_name is provided, 
+        it also saves the overall and per-class metrics into CSV files.
+    """
     evaluator = Evaluator(num_classes)
 
     model.eval()
@@ -147,10 +165,12 @@ def do_accuracy_evaluation2(model, dataloader, num_classes, out_name=None):
             labels = labels.to(device)
 
             outputs = model(images)
+            out = F.softmax(out, 1)
             _, preds = torch.max(outputs.data, 1)
 
             # add batch to evaluator
-            evaluator.add_batch(labels.cpu().numpy(), preds.cpu().numpy())
+            evaluator.add_batch(labels.cpu().numpy(), 
+                                preds.cpu().numpy())
 
     # calculate evaluation metrics
     overall_accuracy = evaluator.overall_accuracy()
@@ -172,7 +192,7 @@ def do_accuracy_evaluation2(model, dataloader, num_classes, out_name=None):
     }
 
     # print confusion matrix
-    evaluator.plot_confusion_matrix()
+    evaluator.plot_confusion_matrix(class_mapping)
     
     if out_name:
         with open(out_name, mode='w', newline='') as file:
@@ -188,7 +208,8 @@ def do_accuracy_evaluation2(model, dataloader, num_classes, out_name=None):
             writer.writerow(['Class', 'Accuracy', 'IoU', 'Precision', 'Recall'])
 
             for i in range(1, evaluator.num_class):
-                writer.writerow([i, classwise_overal_accuracy[i], IoU[i], 
+                class_name = class_mapping[i]
+                writer.writerow([class_name, classwise_overal_accuracy[i], IoU[i], 
                                  precision[i], recall[i]])
     
     return metrics
