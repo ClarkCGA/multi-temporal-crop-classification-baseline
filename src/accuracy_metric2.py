@@ -1,6 +1,7 @@
 import csv
 import itertools
 import torch
+import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -30,25 +31,49 @@ class Evaluator(object):
         Also known as User’s Accuracy (UA) and Positive Prediction Value (PPV).
         """
         tp = np.diag(self.confusion_matrix)
-        fp = np.sum(self.confusion_matrix, axis=0) - tp  # column-wise summation
-        precision = tp / (tp + fp)
+        fp = np.sum(self.confusion_matrix, axis=0) - tp
+        precision = np.where((tp + fp) != 0,
+                             tp / (tp + fp),
+                             0)
         return precision
 
 
     def recall(self):
         """
-        Also known as Producer's Accuracy (PA), True Positive Rate, Sensitivity and hit rate.
+        Also known as Producer's Accuracy (PA), True Positive Rate, Sensitivity 
+        and hit rate.
         """
         tp = np.diag(self.confusion_matrix)
         fn = np.sum(self.confusion_matrix, axis=1) - tp
-        recall = tp / (tp + fn)
+        recall = np.where((tp + fn) != 0,
+                          tp / (tp + fn),
+                          0)
         return recall
+    
+    def f1_score(self):
+        """
+        Also known as balanced F-score or F-measure.
+
+        The F1 score can be interpreted as a weighted average of the precision and 
+        recall, where an F1 score reaches its best value at 1 and worst score at 0.
+        """
+        precision = self.precision()
+        recall = self.recall()
+        f1_score = np.where((precision + recall) != 0, 
+                        2 * (precision * recall) / (precision + recall), 
+                        0)
+        return f1_score
 
 
     def intersection_over_union(self):
-        iou = (2 * np.diag(self.confusion_matrix)) / (
-                    np.sum(self.confusion_matrix, axis=1) + 
-                    np.sum(self.confusion_matrix, axis=0))
+        tp = np.diag(self.confusion_matrix)
+        # Predicted Positive (TP+FP); each column's sum
+        fp = np.sum(self.confusion_matrix, axis=0) - tp
+        # Actual Positive (TP+FN); each row's sum
+        fn = np.sum(self.confusion_matrix, axis=1) - tp
+        iou = np.where((tp + fp + fn) != 0,
+                       tp / (tp + fp + fn),
+                       0)
         return iou
 
 
@@ -182,34 +207,37 @@ def do_accuracy_evaluation2(model, dataloader, num_classes, class_mapping, out_n
     mean_precision = np.nanmean(precision)
     recall = evaluator.recall()
     mean_recall = np.nanmean(recall)
+    f1_score = evaluator.f1_score()
+    mean_f1_score = np.nanmean(f1_score)
 
     metrics = {
         "Overall Accuracy": overall_accuracy,
         "Mean Accuracy": mean_accuracy,
         "Mean IoU": mean_IoU,
         "mean Precision": mean_precision,
-        "mean Recall": mean_recall
+        "mean Recall": mean_recall,
+        "Mean F1 Score": mean_f1_score
     }
 
     # print confusion matrix
     evaluator.plot_confusion_matrix(class_mapping)
     
     if out_name:
-        with open(out_name, mode='w', newline='') as file:
+        with open(out_name, mode="w", newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Metric', 'Value'])
+            writer.writerow(["Metric", "Value"])
 
             for metric_name, metric_value in metrics.items():
                 writer.writerow([metric_name, metric_value])
         
-        class_metrics_out_name = out_name.rsplit('.', 1)[0] + "_classwise." + out_name.rsplit('.', 1)[1]
-        with open(class_metrics_out_name, mode='w', newline='') as file:
+        class_metrics_out_name = out_name.rsplit(".", 1)[0] + "_classwise." + out_name.rsplit(".", 1)[1]
+        with open(class_metrics_out_name, mode="w", newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Class', 'Accuracy', 'IoU', 'Precision', 'Recall'])
+            writer.writerow(["Class", "Accuracy", "IoU", "Precision", "Recall", "F1 Score"])
 
-            for i in range(1, evaluator.num_class):
+            for i in range(evaluator.num_class):
                 class_name = class_mapping[i]
                 writer.writerow([class_name, classwise_overal_accuracy[i], IoU[i], 
-                                 precision[i], recall[i]])
+                                 precision[i], recall[i], f1_score[i]])
     
     return metrics
