@@ -17,7 +17,8 @@ from pathlib import Path
 
 
 def load_data(data_path, usage, is_label=False, apply_normalization=False, 
-              normal_strategy="z_value", stat_procedure="gpb", dtype=np.float32, verbose=False):
+              normal_strategy="z_value", stat_procedure="gpb", dtype=np.float32, 
+              global_stats=None, verbose=False):
     r"""
     Open data using gdal, read it as an array and normalize it.
 
@@ -35,6 +36,8 @@ def load_data(data_path, usage, is_label=False, apply_normalization=False,
                                     - 'gab': global over all bands.
                                     - 'lpb': local tile per band.
                                     - 'gpb': global per band.
+            global_stats (dict): Optional dictionary containing the 'min', 'max', 'mean', and 'std' arrays 
+                                 for each band. If not provided, these values will be calculated from the data.
             dtype (np.dtype): Data type of the output image chips.
             verbose (binary): if set to true, print a screen statement on the loaded band.
 
@@ -58,7 +61,7 @@ def load_data(data_path, usage, is_label=False, apply_normalization=False,
             meta = src.meta
             if apply_normalization:
                 img = do_normalization(src.read(), normal_strategy, stat_procedure,
-                                        bounds=(0, 1), clip_val=1)
+                                        bounds=(0, 1), clip_val=1, global_stats=global_stats)
                 img = img.astype(dtype)
             else:
                 img = src.read()

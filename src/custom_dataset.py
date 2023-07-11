@@ -29,6 +29,8 @@ class CropData(Dataset):
                                     - 'gab': global over all bands.
                                     - 'lpb': local tile per band.
                                     - 'gpb': global per band.
+        global_stats (dict): Optional dictionary containing the 'min', 'max', 'mean', and 'std' arrays 
+                             for each band. If not provided, these values will be calculated from the data.
         trans (list of str): Transformation or data augmentation methods; list 
                              elements could be chosen from:
                              ['v_flip','h_flip','d_flip','rotate','resize','shift_brightness']
@@ -50,7 +52,8 @@ class CropData(Dataset):
     """
 
     def __init__(self, src_dir, usage, dataset_name, csv_path, apply_normalization=False, 
-                 normal_strategy="z_value", stat_procedure="gpb", trans=None, **kwargs):
+                 normal_strategy="z_value", stat_procedure="gpb", global_stats=None, 
+                 trans=None, **kwargs):
 
         self.usage = usage
         self.dataset_name = dataset_name
@@ -90,7 +93,8 @@ class CropData(Dataset):
                                      is_label=False,
                                      apply_normalization=self.apply_normalization,
                                      normal_strategy=self.normal_strategy,
-                                     stat_procedure=self.stat_procedure)
+                                     stat_procedure=self.stat_procedure,
+                                     global_stats=global_stats)
                 img_chip = img_chip.transpose((1, 2, 0))
 
                 lbl_chip = load_data(Path(src_dir) / self.dataset_name / lbl_fname, 
@@ -109,7 +113,8 @@ class CropData(Dataset):
                                            is_label=False,
                                            apply_normalization=self.apply_normalization,
                                            normal_strategy=self.normal_strategy,
-                                           stat_procedure=self.stat_procedure)
+                                           stat_procedure=self.stat_procedure,
+                                           global_stats=global_stats)
                 img_chip = img_chip.transpose((1, 2, 0))
                 self.img_chips.append(img_chip)
 
