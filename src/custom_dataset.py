@@ -21,29 +21,42 @@ class CropData(Dataset):
         csv_path (str): full path to the csv file containing the id of tiles used 
                         for splitting the dataset into train and validation subsets.
         apply_normalization (binary): decides if normalization should be applied.
+        normal_strategy (str): Strategy for normalization. Either 'min_max'
+                               or 'z_value'.
+        stat_procedure (str): Procedure to calculate the statistics used in normalization.
+                              Options:
+                                    - 'lab': local tile over all bands.
+                                    - 'gab': global over all bands.
+                                    - 'lpb': local tile per band.
+                                    - 'gpb': global per band.
         trans (list of str): Transformation or data augmentation methods; list 
                              elements could be chosen from:
-                             ['v_flip','h_flip','d_flip','rotate','resize']
-        split_ratio (float): Number in the range (0,1) that decides on the portion 
-                             of samples that should be used for training. 
-                             The remaining portion of samples will be assigned to 
-                             the 'validation' dataset. Default is 0.8.
-        make_deterministic (Binary): If set to True, we seed the numpy randomization 
-                                     in splitting the dataset into train and validation 
-                                     subfolders.
+                             ['v_flip','h_flip','d_flip','rotate','resize','shift_brightness']
+        **kwargs (dict, optional): Additional parameters for the specified transformation methods. 
+                        These can include:
+                             - scale_factor (tuple): Scaling factor for the 'resize' transformation 
+                               (default is (0.75, 1.5)).
+                             - rotation_degree (tuple): Degree range for 'rotate' transformation 
+                               (default is (-90, 90)).
+                             - bshift_subs (tuple): Band subsets for 'shift_brightness' transformation 
+                               (default is (6, 6, 6)).
+                             - bshift_gamma_range (tuple): Gamma range for 'shift_brightness' transformation 
+                               (default is (0.2, 2.0)).
+                             - patch_shift (bool): Whether to apply patch shift for 'shift_brightness' transformation 
+                               (default is True).
     Returns:
         A tuple of (image, label) for training and validation but only the image iterable 
         if in the inference phase.
     """
 
-    def __init__(self, src_dir, usage, dataset_name, csv_path, split_ratio=0.8, 
-                 apply_normalization=False, normal_strategy="z_value", trans=None, **kwargs):
+    def __init__(self, src_dir, usage, dataset_name, csv_path, apply_normalization=False, 
+                 normal_strategy="z_value", stat_procedure="gpb", trans=None, **kwargs):
 
         self.usage = usage
         self.dataset_name = dataset_name
-        self.split_ratio = split_ratio
         self.apply_normalization = apply_normalization
         self.normal_strategy = normal_strategy
+        self.stat_procedure = stat_procedure
         self.trans = trans
         self.kwargs = kwargs
 
@@ -69,31 +82,6 @@ class CropData(Dataset):
             self.img_chips = []
             self.lbl_chips = []
 
-            """
-            total_samples = len(img_fnames)
-            indices = np.arange(total_samples)
-            split_index = int(total_samples * self.split_ratio)
-
-            np.random.seed(0)
-            np.random.shuffle(indices)
-
-            train_indices = indices[:split_index]
-            val_indices = indices[split_index:]
-
-            train_img_fnames = [img_fnames[i] for i in train_indices]
-            train_lbl_fnames = [lbl_fnames[i] for i in train_indices]
-
-            val_img_fnames = [img_fnames[i] for i in val_indices]
-            val_lbl_fnames = [lbl_fnames[i] for i in val_indices]
-
-            if self.usage == "train":
-                img_fnames = train_img_fnames
-                lbl_fnames = train_lbl_fnames
-            else:
-                img_fnames = val_img_fnames
-                lbl_fnames = val_lbl_fnames
-            """
-
             for img_fname, lbl_fname in tqdm.tqdm(zip(img_fnames, lbl_fnames), 
                                                   total=len(img_fnames)):
                     
@@ -101,7 +89,8 @@ class CropData(Dataset):
                                      usage=self.usage,
                                      is_label=False,
                                      apply_normalization=self.apply_normalization,
-                                     normal_strategy= self.normal_strategy)
+                                     normal_strategy=self.normal_strategy,
+                                     stat_procedure=self.stat_procedure)
                 img_chip = img_chip.transpose((1, 2, 0))
 
                 lbl_chip = load_data(Path(src_dir) / self.dataset_name / lbl_fname, 
@@ -119,7 +108,8 @@ class CropData(Dataset):
                                            usage=self.usage,
                                            is_label=False,
                                            apply_normalization=self.apply_normalization,
-                                           normal_strategy=self.normal_strategy)
+                                           normal_strategy=self.normal_strategy,
+                                           stat_procedure=self.stat_procedure)
                 img_chip = img_chip.transpose((1, 2, 0))
                 self.img_chips.append(img_chip)
 
