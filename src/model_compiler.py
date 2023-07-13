@@ -181,7 +181,7 @@ class ModelCompiler:
         else:
             self.gpu = False
             print('----------No GPU available, using CPU instead----------')
-            self.model = self.model.to(device)
+            self.model = self.model.to(self.device)
 
 
         if params_init is None:
