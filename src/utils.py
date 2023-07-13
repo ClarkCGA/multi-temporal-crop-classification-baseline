@@ -18,7 +18,7 @@ from pathlib import Path
 
 def load_data(data_path, usage, is_label=False, apply_normalization=False, 
               normal_strategy="z_value", stat_procedure="gpb", dtype=np.float32, 
-              global_stats=None, verbose=False):
+              verbose=False):
     r"""
     Open data using gdal, read it as an array and normalize it.
 

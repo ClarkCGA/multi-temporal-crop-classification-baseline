@@ -52,8 +52,7 @@ class CropData(Dataset):
     """
 
     def __init__(self, src_dir, usage, dataset_name, csv_path, apply_normalization=False, 
-                 normal_strategy="z_value", stat_procedure="gpb", global_stats=None, 
-                 trans=None, **kwargs):
+                 normal_strategy="z_value", stat_procedure="gpb", trans=None, **kwargs):
 
         self.usage = usage
         self.dataset_name = dataset_name
