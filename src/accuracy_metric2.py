@@ -190,7 +190,9 @@ def do_accuracy_evaluation2(model, dataloader, num_classes, class_mapping, out_n
             labels = labels.to(device)
 
             outputs = model(images)
-            out = F.softmax(out, 1)
+            if torch.isnan(outputs).any():
+                print("NaN value found in model outputs!")
+            outputs = F.softmax(outputs, 1)
             _, preds = torch.max(outputs.data, 1)
 
             # add batch to evaluator
@@ -235,7 +237,7 @@ def do_accuracy_evaluation2(model, dataloader, num_classes, class_mapping, out_n
             writer = csv.writer(file)
             writer.writerow(["Class", "Accuracy", "IoU", "Precision", "Recall", "F1 Score"])
 
-            for i in range(evaluator.num_class):
+            for i in range(1, evaluator.num_class):
                 class_name = class_mapping[i]
                 writer.writerow([class_name, classwise_overal_accuracy[i], IoU[i], 
                                  precision[i], recall[i], f1_score[i]])

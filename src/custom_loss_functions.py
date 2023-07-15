@@ -27,9 +27,9 @@ class BalancedCrossEntropyLoss(nn.Module):
         self.weight = weight
         if self.weight is not None:
             if isinstance(self.weight, list):
-                self.weight = torch.tensor(self.weight, dtype=torch.float32).cuda()
+                self.weight = torch.tensor(self.weight, dtype=torch.float32)
             if self.ignore_index >= 0:
-                zero_element = torch.tensor([0.]).cuda()
+                zero_element = torch.tensor([0.])
                 self.weight = torch.cat((self.weight[:self.ignore_index], zero_element, self.weight[self.ignore_index:]), dim=0)
 
         assert weight_scheme in ["icr", "mcf"], "'weight_scheme' is not recognized."
@@ -41,7 +41,7 @@ class BalancedCrossEntropyLoss(nn.Module):
             predict (torch.Tensor): Predicted output tensor.
             target (torch.Tensor): Target tensor.
         """
-              
+        device = predict.device      
         if self.weight is None:
             class_counts = torch.bincount(target.view(-1), minlength=predict.shape[1])
             # get class weights
@@ -50,13 +50,19 @@ class BalancedCrossEntropyLoss(nn.Module):
             else:
                 median_frequency = torch.median(class_counts.float())
                 class_weights = median_frequency / class_counts.float()
-    
+            
             # set weight of ignore index to 0
             if self.ignore_index >= 0 and self.ignore_index < len(class_weights):
                 class_weights[self.ignore_index] = 0
     
             # normalize weights
             class_weights /= torch.sum(class_weights)
+        
+        else:
+            class_weights = self.weight.to(device)
+
+    
+            
 
         # apply class weights to loss function
         loss_fn = nn.CrossEntropyLoss(weight=class_weights, ignore_index=self.ignore_index,
