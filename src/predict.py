@@ -37,7 +37,7 @@ def do_prediction(testData, model, score_path, prob_path, gpu):
 
     with torch.no_grad():
 
-        for images, img_ids, img_metas in testData:
+        for images,_, img_ids, img_metas in testData:
             
             img_chips = images.to(device)
             outputs = model(img_chips)

@@ -66,21 +66,23 @@ class CropData(Dataset):
         assert self.usage in ["train", "validation", "inference"], "Usage is not recognized."
 
         catalog = pd.read_csv(csv_path, header=None)
-        flag_ids = catalog[0].tolist()
+        flag_ids_unrefined = catalog[0].tolist()
+        bad_tiles = ['305_343', '417_328', '419_322', '419_323', '417_321']
+        flag_ids = [item for item in flag_ids_unrefined if item not in bad_tiles]
+
+        img_fnames = [Path(dirpath) / f
+                      for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
+                      for f in filenames 
+                      if f.endswith(".tif") and ("merged" in f) and ('_'.join(Path(f).stem.split('_')[1:3]) in flag_ids)]
+        img_fnames.sort()
+
+        lbl_fnames = [Path(dirpath) / f 
+                      for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
+                      for f in filenames 
+                      if f.endswith(".tif") and ("mask" in f) and ('_'.join(Path(f).stem.split('_')[1:3]).split(".")[0] in flag_ids)]
+        lbl_fnames.sort()
 
         if self.usage in ["train", "validation"]:
-
-            img_fnames = [Path(dirpath) / f
-                          for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
-                          for f in filenames 
-                          if f.endswith(".tif") and ("merged" in f) and ('_'.join(Path(f).stem.split('_')[1:3]) in flag_ids)]
-            img_fnames.sort()
-
-            lbl_fnames = [Path(dirpath) / f 
-                          for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
-                          for f in filenames 
-                          if f.endswith(".tif") and ("mask" in f) and ('_'.join(Path(f).stem.split('_')[1:3]).split(".")[0] in flag_ids)]
-            lbl_fnames.sort()
 
             self.img_chips = []
             self.lbl_chips = []
@@ -105,8 +107,10 @@ class CropData(Dataset):
                 self.lbl_chips.append(lbl_chip)
         else:
             self.img_chips = []
+            self.lbl_chips = []
             self.ids = []
             self.meta_ls = []
+            
             for img_fname in tqdm.tqdm(img_fnames):
                 img_chip, meta = load_data(Path(src_dir) / self.dataset_name / img_fname,
                                            usage=self.usage,
@@ -116,7 +120,11 @@ class CropData(Dataset):
                                            stat_procedure=self.stat_procedure,
                                            global_stats=global_stats)
                 img_chip = img_chip.transpose((1, 2, 0))
+                lbl_chip = load_data(Path(src_dir) / self.dataset_name / lbl_fname, 
+                                     usage=self.usage, is_label=True)
+                
                 self.img_chips.append(img_chip)
+                self.lbl_chips.append(lbl_chip)
 
                 self.meta_ls.append(meta)
 
@@ -140,7 +148,7 @@ class CropData(Dataset):
 
             if self.trans and self.usage == "train":
                 trans_flip_ls = [m for m in self.trans if "flip" in m]
-                if random.randint(0, 1) and len(trans_flip_ls) > 1:
+                if random.randint(0, 1) and len(trans_flip_ls) >= 1:
                     trans_flip = random.sample(trans_flip_ls, 1)
                     img_chip, lbl_chip = flip(img_chip, lbl_chip, trans_flip[0])
                     
@@ -168,12 +176,14 @@ class CropData(Dataset):
         
         else:
             img_chip = self.img_chips[index]
+            lbl_chip = self.lbl_chips[index]
             img_id = self.ids[index]
             img_meta = self.meta_ls[index]
             
             img_chip = torch.from_numpy(img_chip.transpose((2, 0, 1))).float()
+            label = torch.from_numpy(np.ascontiguousarray(lbl_chip)).long()
 
-            return img_chip, img_id, img_meta
+            return img_chip, label, img_id, img_meta
 
     def __len__(self):
         return len(self.img_chips)
