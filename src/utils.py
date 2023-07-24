@@ -56,6 +56,7 @@ def load_data(data_path, usage, is_label=False, apply_normalization=False,
             if src.count != 1:
                 raise ValueError("Expected Label to have exactly one channel.")
             img = src.read(1)
+            return img
 
         else:
             meta = src.meta
@@ -270,3 +271,26 @@ def split_dataset(src_dir, dataset_name, split_ratio, out_dir, seed=0):
             writer.writerow([id])
 
     return train_ids, val_ids
+
+
+def calculate_zero_class_percentage(dataset):
+    """
+    Calculate and return the percentage of zero pixels in the label images of a given dataset.
+
+    Args:
+        dataset (torch.utils.data.Dataset): A PyTorch Dataset object.
+
+    Returns:
+        float: The percentage of zero pixels.
+    """
+    total_pixels = 0
+    total_zero_pixels = 0
+
+    for img_chips, labels in dataset:
+        total_pixels += labels.nelement()
+        total_zero_pixels += (labels == 0).sum().item()
+
+    percentage_zero = (total_zero_pixels / total_pixels) * 100
+    print(f"Percentage of zero pixels: {percentage_zero} %")
+    
+    return percentage_zero

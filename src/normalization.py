@@ -2,7 +2,7 @@ import numpy as np
 
 
 def do_normalization(img, normal_strategy, stat_procedure, bounds=(0, 1), 
-                     nodata=None, clip_val=None, global_stats=None):
+                     nodata=None, clip_val=1.5, global_stats=None):
     """
     Normalize the input image pixels to a user-defined range based on the
     minimum and maximum statistics of each band and optional clip value.
@@ -71,7 +71,7 @@ def do_normalization(img, normal_strategy, stat_procedure, bounds=(0, 1),
                 gpb_maxs[:, None, None] - gpb_mins[:, None, None])
         
         elif stat_procedure == "gab":
-            gab_min = np.mean(gpb_mins)
+            gab_min = np.mean(gpb_mins)           
             gab_max = np.mean(gpb_maxs)
             normal_img = (upper_bound - lower_bound) * (img - gab_min) / (gab_max - gab_min)
         
@@ -105,7 +105,13 @@ def do_normalization(img, normal_strategy, stat_procedure, bounds=(0, 1),
         
         elif stat_procedure == "gab":
             gpb_mean = np.mean(gpb_means)
-            gpb_std = np.mean(gpb_stds)
+
+            num_pixels_per_band = img.shape[1] * img.shape[2]
+            squared_std_values = gpb_stds ** 2
+            squared_std_values *= num_pixels_per_band
+            sum_squared_std = np.sum(squared_std_values)
+            total_samples = num_pixels_per_band * len(gpb_stds)
+            gpb_std = np.sqrt(sum_squared_std / total_samples)
             normal_img = (img - gpb_mean) / gpb_std
         
         elif stat_procedure == "lpb":

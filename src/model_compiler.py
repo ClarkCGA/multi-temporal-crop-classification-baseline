@@ -10,7 +10,7 @@ from train import train_one_epoch
 from validate import validate_one_epoch
 from custom_optimizer import SAM
 from accuracy_metric import do_accuracy_evaluation
-from accuracy_metric2 import do_accuracy_evaluation2
+from predict import do_prediction
 
 
 def get_optimizer(optimizer, model, params, lr, momentum):
@@ -401,12 +401,13 @@ class ModelCompiler:
         duration_format = str(timedelta(seconds=duration_in_sec))
         print(f"----------- Training finished in {duration_format} -----------")
 
-    def accuracy_evaluation(self, evalDataset, filename):
+    
+    def accuracy_evaluation(self, eval_dataset, filename):
         """
         Evaluate the accuracy of the model on the provided evaluation dataset.
 
         Args:
-            evalDataset (DataLoader): The evaluation dataset to evaluate the model on.
+            eval_dataset (DataLoader): The evaluation dataset to evaluate the model on.
             filename (str): The filename to save the evaluation results in the output CSV.
     """
 
@@ -419,12 +420,23 @@ class ModelCompiler:
 
         start = datetime.now()
 
-        #do_accuracy_evaluation(evalDataset, self.model, filename, self.gpu)
-        do_accuracy_evaluation2(self.model, evalDataset, self.num_classes, self.class_mapping, filename)
+        do_accuracy_evaluation(self.model, eval_dataset, self.num_classes, self.class_mapping, filename)
 
         duration_in_sec = (datetime.now() - start).seconds
         print(
             f"---------------- Evaluation finished in {duration_in_sec}s ----------------")
+
+
+    def inference(self, test_data, out_dir):
+
+        print("---------------- Start prediction ----------------")
+        start = datetime.now()
+
+        do_prediction(test_data, self.model, self.out_dir, self.gpu)
+
+        duration_in_sec = (datetime.now() - start).seconds
+        print(
+            f"---------------- Prediction finished in {duration_in_sec}s ----------------")
 
 
     def save(self, save_object="params"):

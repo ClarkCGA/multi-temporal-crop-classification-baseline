@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 
-def do_prediction(testData, model, score_path, prob_path, gpu):
+def do_prediction(testData, model, out_dir, gpu):
     r"""
     Use train model to predict on unseen data.
 
@@ -18,14 +18,16 @@ def do_prediction(testData, model, score_path, prob_path, gpu):
                      in the form of 6 digits seperated in the middle with an underscore like "003_012"
                 'img_meta' (list of dictionary)-- Rasterio metadata for each image chip in the batch 
         model (ordered Dict): trained model.
-        score_path (str): Directory to store hardened probability map.
-        prob_path (str): Directory to store soft probability map.
+        out_dir (str): Directory to store prediction output.
         gpu (binary): If False the model will run on CPU instead of GPU. Default is True.
     output:
         hardened prediction as tiff using rasterio in score_path. Filename should 
         be "score_{img_id}" and use the 'img_meta'.
           
     """
+    score_path = Path(out_dir) / "hardened_prob"
+    prob_path = Path(out_dir) / "prob"
+    
     if gpu and torch.cuda.is_available():
         device = torch.device("cuda")
     else:
@@ -46,7 +48,7 @@ def do_prediction(testData, model, score_path, prob_path, gpu):
 
             batch, n_class, height, width = soft_preds.size()
 
-            assert len(img_ids) == batch == len(img_metas)
+            assert len(img_ids) == batch == len(img_metas), f"#img_ids:{len(img_ids)}, batch: {batch}, #img_meta: {len(img_metas)}"
 
             for i in range(batch):
                 
@@ -55,6 +57,9 @@ def do_prediction(testData, model, score_path, prob_path, gpu):
                 name_crisp = f"crisp_id_{img_id}.tif"
                 
                 img_meta = img_metas[i]
+
+                # Convert the string back to a CRS object
+                img_meta["crs"] = rasterio.crs.CRS.from_string(img_meta["crs"])
                 
                 meta_hard = img_meta.copy()
                 meta_hard.update({
@@ -79,5 +84,7 @@ def do_prediction(testData, model, score_path, prob_path, gpu):
 
                     with rasterio.open(Path(prob_path) / name_prob_updated, "w", **meta_soft) as dst:
                         dst.write(soft_pred, 1)
+                
+                print(f"Pred tile: {img_id} is written to {out_dir}")
                 
  

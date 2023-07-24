@@ -111,7 +111,8 @@ class CropData(Dataset):
             self.ids = []
             self.meta_ls = []
             
-            for img_fname in tqdm.tqdm(img_fnames):
+            for img_fname, lbl_fname in tqdm.tqdm(zip(img_fnames, lbl_fnames),
+                                                  total=len(img_fnames)):
                 img_chip, meta = load_data(Path(src_dir) / self.dataset_name / img_fname,
                                            usage=self.usage,
                                            is_label=False,
@@ -159,7 +160,8 @@ class CropData(Dataset):
                     
                 if random.randint(0, 1) and "rotate" in self.trans:
                     deRotate = kwargs.get("rotation_degree", (-90, 90))
-                    img_chip, lbl_chip = center_rotate(img_chip, lbl_chip, deRotate)
+                    #img_chip, lbl_chip = center_rotate(img_chip, lbl_chip, deRotate)
+                    img_chip, lbl_chip = rotate_image_and_label(img_chip, lbl_chip, deRotate)
                     
                 if random.randint(0, 1) and 'shift_brightness' in self.trans:
                     bshift_subs = kwargs.get("bshift_subs", (6, 6, 6))
@@ -179,6 +181,9 @@ class CropData(Dataset):
             lbl_chip = self.lbl_chips[index]
             img_id = self.ids[index]
             img_meta = self.meta_ls[index]
+            
+            # Convert the CRS object to a string before returning
+            img_meta["crs"] = img_meta["crs"].to_string()
             
             img_chip = torch.from_numpy(img_chip.transpose((2, 0, 1))).float()
             label = torch.from_numpy(np.ascontiguousarray(lbl_chip)).long()

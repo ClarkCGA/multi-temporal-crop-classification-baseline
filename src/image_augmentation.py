@@ -6,6 +6,50 @@ import numpy.ma as ma
 import cv2
 import random
 from collections.abc import Sequence
+from scipy.ndimage import rotate
+
+
+import numpy as np
+import random
+from scipy.ndimage import rotate
+
+def rotate_image_and_label(image, label, degree):
+    """
+    Applies rotation augmentation to an image patch and label.
+
+    Args:
+        image (numpy array) : The input image patch as a numpy array.
+        label (numpy array) : The corresponding label as a numpy array.
+        degree (list of floats) : If the list has exactly two elements they will
+            be considered the lower and upper bounds for the rotation angle 
+            (in degrees) respectively. If number of elements are bigger than 2, 
+            then one value is chosen randomly as the rotation angle.
+
+    Returns:
+        A tuple containing the rotated image patch and label as numpy arrays.
+    """
+    if isinstance(degree, (tuple, list)):
+        if len(degree) == 2:
+            rotation_degree = random.uniform(*degree)
+        elif len(degree) > 2:
+            rotation_degree = random.choice(degree)
+        else:
+            raise ValueError("Parameter angle needs at least two elements.")
+    else:
+        raise ValueError(
+            "Rotation bound param for augmentation must be a tuple or list."
+        )
+
+    # Apply rotation augmentation to the image patch
+    rotated_image = rotate(image, rotation_degree, axes=(1, 0), 
+                           reshape=False, mode='reflect')
+
+    # Apply rotation augmentation to the label
+    rotated_label = rotate(label, rotation_degree, axes=(1, 0), 
+                           reshape=False, mode='nearest')
+
+    # Return the rotated image patch and label as a tuple
+    return rotated_image, rotated_label
 
 
 def center_rotate(img, label, degree):
@@ -53,10 +97,11 @@ def center_rotate(img, label, degree):
 
     # perform the actual rotation on image and label.
     img = cv2.warpAffine(img, rot_matrix, (w, h))
-    label = cv2.warpAffine(label, rot_matrix, (w, h))
+    label = cv2.warpAffine(label.astype(np.uint8), rot_matrix, (w, h), flags=cv2.INTER_NEAREST)
 
     # Round all pixel values greater than 0.5 to 1 and assign zero to the rest.
-    label = np.rint(label)
+    #label = np.rint(label)
+    #label = label.astype(int)
 
     return img, label
 
@@ -144,7 +189,7 @@ def re_scale(img, label, scale=(0.75, 1.5), crop_strategy="center"):
     # We are using a bi-linear interpolation by default for resampling.
     # When output image size is zero then the output size is calculated based on fx and fy.
     resampled_img = trans.resize(img, (resize_h, resize_w), preserve_range=True)
-    resampled_label = trans.resize(label, (resize_h, resize_w), preserve_range=True)
+    resampled_label = trans.resize(label, (resize_h, resize_w), order=0, preserve_range=True)
 
     if crop_strategy == "center":
         x_off = max(0, abs(resize_h - h) // 2)
