@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from normalization import do_normalization
 from pathlib import Path
+from IPython.core.debugger import set_trace
 
 
 def load_data(data_path, usage, is_label=False, apply_normalization=False, 

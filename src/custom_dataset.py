@@ -4,6 +4,7 @@ import tqdm
 import numpy as np
 import pandas as pd
 import torch
+from affine import Affine
 from torch.utils.data import Dataset
 from utils import load_data
 from image_augmentation import *
@@ -110,7 +111,7 @@ class CropData(Dataset):
             self.lbl_chips = []
             self.ids = []
             self.meta_ls = []
-            
+
             for img_fname, lbl_fname in tqdm.tqdm(zip(img_fnames, lbl_fnames),
                                                   total=len(img_fnames)):
                 img_chip, meta = load_data(Path(src_dir) / self.dataset_name / img_fname,
@@ -180,15 +181,32 @@ class CropData(Dataset):
             img_chip = self.img_chips[index]
             lbl_chip = self.lbl_chips[index]
             img_id = self.ids[index]
-            img_meta = self.meta_ls[index]
-            
-            # Convert the CRS object to a string before returning
-            img_meta["crs"] = img_meta["crs"].to_string()
+            #img_meta = self.meta_ls[index]
+            img_meta = self.get_metadata_dict(self.meta_ls[index])
             
             img_chip = torch.from_numpy(img_chip.transpose((2, 0, 1))).float()
             label = torch.from_numpy(np.ascontiguousarray(lbl_chip)).long()
 
             return img_chip, label, img_id, img_meta
+
+    def get_metadata_dict(self, meta):
+        img_meta = {}
+        for k, v in meta.items():
+            if isinstance(v, torch.Tensor):
+                img_meta[k] = v.item()  # get Python number from tensor
+            elif isinstance(v, list):
+                img_meta[k] = [x.item() if isinstance(x, torch.Tensor) else x for x in v]  # get Python number from tensor in list
+            else:
+                img_meta[k] = v
+
+        # Handle crs and transform if present in the metadata
+        if "crs" in img_meta and not isinstance(img_meta["crs"], str):
+            img_meta["crs"] = img_meta["crs"].to_string()
+
+        if "transform" in img_meta and isinstance(img_meta["transform"], Affine):
+            img_meta["transform"] = [x for x in img_meta["transform"]]
+
+        return img_meta
 
     def __len__(self):
         return len(self.img_chips)

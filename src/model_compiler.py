@@ -429,6 +429,11 @@ class ModelCompiler:
 
     def inference(self, test_data, out_dir):
 
+        if not os.path.exists(Path(self.working_dir) / self.out_dir):
+            os.makedirs(Path(self.working_dir) / self.out_dir)
+
+        os.chdir(Path(self.working_dir))
+
         print("---------------- Start prediction ----------------")
         start = datetime.now()
 

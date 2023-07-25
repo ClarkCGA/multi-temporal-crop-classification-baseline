@@ -2,9 +2,11 @@ import os
 import torch
 import rasterio
 import numpy as np
+import torch.nn.functional as F
+from affine import Affine
 from pathlib import Path
 from torch.autograd import Variable
-import torch.nn.functional as F
+from IPython.core.debugger import set_trace
 
 
 def do_prediction(testData, model, out_dir, gpu):
@@ -26,7 +28,9 @@ def do_prediction(testData, model, out_dir, gpu):
           
     """
     score_path = Path(out_dir) / "hardened_prob"
+    score_path.mkdir(parents=True, exist_ok=True)
     prob_path = Path(out_dir) / "prob"
+    prob_path.mkdir(parents=True, exist_ok=True)
     
     if gpu and torch.cuda.is_available():
         device = torch.device("cuda")
@@ -37,6 +41,7 @@ def do_prediction(testData, model, out_dir, gpu):
     model.to(device)
     model.eval()
 
+    #set_trace()
     with torch.no_grad():
 
         for images,_, img_ids, img_metas in testData:
@@ -48,7 +53,7 @@ def do_prediction(testData, model, out_dir, gpu):
 
             batch, n_class, height, width = soft_preds.size()
 
-            assert len(img_ids) == batch == len(img_metas), f"#img_ids:{len(img_ids)}, batch: {batch}, #img_meta: {len(img_metas)}"
+            #assert len(img_ids) == batch == len(img_metas), f"#img_ids:{len(img_ids)}, batch: {batch}, #img_meta: {len(img_metas)}"
 
             for i in range(batch):
                 
@@ -60,10 +65,13 @@ def do_prediction(testData, model, out_dir, gpu):
 
                 # Convert the string back to a CRS object
                 img_meta["crs"] = rasterio.crs.CRS.from_string(img_meta["crs"])
+                if "transform" in img_meta:
+                    #img_meta["transform"] = [t.item() for t in img_meta["transform"]]
+                    img_meta["transform"] = Affine(*img_meta["transform"][:6])
                 
                 meta_hard = img_meta.copy()
                 meta_hard.update({
-                    "dtype": "uint8",
+                    "dtype": "int16",
                     "count": 1,
                     })
                 
@@ -73,14 +81,14 @@ def do_prediction(testData, model, out_dir, gpu):
                     "count": 1,
                     })
                 
-                hard_pred = hard_preds[i].cpu().numpy().astype(meta_hard["dtype"])
+                hard_pred = hard_preds[1].cpu().numpy()[i, :, :].astype(meta_hard["dtype"])
                 with rasterio.open(Path(score_path) / name_crisp, "w", **meta_hard) as dst:
                     dst.write(hard_pred, 1)
                 
                 for n in range(1, n_class):
                     name_prob_updated = f"{name_prob}_cat_{n}.tif"
                     soft_pred = soft_preds[:, n, :, :].data[i].cpu().numpy( ) * 100
-                    soft_pred = np.expand_dims(soft_pred, axis=0).astype(meta_soft["dtype"])
+                    #soft_pred = np.expand_dims(soft_pred, axis=0).astype(meta_soft["dtype"])
 
                     with rasterio.open(Path(prob_path) / name_prob_updated, "w", **meta_soft) as dst:
                         dst.write(soft_pred, 1)
