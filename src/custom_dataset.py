@@ -67,9 +67,9 @@ class CropData(Dataset):
         assert self.usage in ["train", "validation", "inference"], "Usage is not recognized."
 
         catalog = pd.read_csv(csv_path, header=None)
-        flag_ids_unrefined = catalog[0].tolist()
-        bad_tiles = ['305_343', '417_328', '419_322', '419_323', '417_321']
-        flag_ids = [item for item in flag_ids_unrefined if item not in bad_tiles]
+        flag_ids = catalog[0].tolist()
+        #bad_tiles = ['305_343', '417_328', '419_322', '419_323', '417_321']
+        #flag_ids = [item for item in flag_ids_unrefined if item not in bad_tiles]
 
         img_fnames = [Path(dirpath) / f
                       for (dirpath, dirnames, filenames) in os.walk(Path(src_dir) / self.dataset_name) 
