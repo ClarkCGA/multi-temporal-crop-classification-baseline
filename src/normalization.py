@@ -49,10 +49,10 @@ def do_normalization(img, normal_strategy, stat_procedure, bounds=(0, 1),
         gpb_means = np.array([377.9830716, 653.4058739, 702.1834053, 2573.849324, 2344.568628, 1432.163695] * 3)
         gpb_stds = np.array([171.5116587, 215.5407551, 364.3545396, 686.5730746, 769.6448444, 675.9192684] * 3)
     else:
-        gpb_mins = global_stats['min']
-        gpb_maxs = global_stats['max']
-        gpb_means = global_stats['mean']
-        gpb_stds = global_stats['std']
+        gpb_mins = np.array(global_stats['min'])
+        gpb_maxs = np.array(global_stats['max'])
+        gpb_means = np.array(global_stats['mean'])
+        gpb_stds = np.array(global_stats['std'])
 
     
     # create a mask of nodata values and replace it with nan for computation.

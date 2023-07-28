@@ -137,21 +137,21 @@ class ModelCompiler:
         Train the model.
 
         Arguments:
-            model (ordered Dict) -- initialized model either vanilla or pre-trained depending on
-                                    the argument 'params_init'.
-            working_dir (str) -- General Directory to store output from any experiment.
-            out_dir (str) -- specific output directory for the current experiment.
-            num_classes (int) -- number of output classes based on the classification scheme.
-            inch (int) -- number of input channels.
+            model (ordered Dict): initialized model either vanilla or pre-trained depending on
+                                  the argument 'params_init'.
+            working_dir (str): General Directory to store output from any experiment.
+            out_dir (str): specific output directory for the current experiment.
+            num_classes (int): number of output classes based on the classification scheme.
+            inch (int): number of input channels.
             class_mapping (dict): A dictionary mapping class indices to class names.
-            gpu_devices (list) -- list of GPU indices to use for parallelism if multiple GPUs are available.
-                                  Default is set to index 0 for a single GPU.
-            model_init_type -- (str) model initialization choice if it's not pre-trained.
-            params_init --(str or None) Path to the saved model parameters. If set to 'None', a vanilla model will
+            gpu_devices (list): list of GPU indices to use for parallelism if multiple GPUs are available.
+                                Default is set to index 0 for a single GPU.
+            model_init_type: (str) model initialization choice if it's not pre-trained.
+            params_init (str or None): Path to the saved model parameters. If set to 'None', a vanilla model will
                           be initialized.
-            freeze_params (list) -- list of integers that show the index of layers in a pre-trained
-                                    model (on the source domain) that we want to freeze for fine-tuning
-                                    the model on the target domain used in the model-based transfer learning.
+            freeze_params (list): list of integers that show the index of layers in a pre-trained
+                                  model (on the source domain) that we want to freeze for fine-tuning
+                                  the model on the target domain used in the model-based transfer learning.
         """
 
         self.working_dir = working_dir
@@ -228,7 +228,8 @@ class ModelCompiler:
                     p.requires_grad = False
 
     def fit(self, trainDataset, valDataset, epochs, optimizer_name, lr_init, 
-            lr_policy, criterion, momentum=None, resume=False, resume_epoch=None, **kwargs):
+            lr_policy, criterion, momentum=None, checkpoint_interval=20, 
+            resume=False, resume_epoch=None, **kwargs):
         """
         Train the model on the provided datasets.
 
@@ -241,6 +242,7 @@ class ModelCompiler:
             lr_policy (str): The learning rate policy.
             criterion: The loss criterion.
             momentum (float, optional): The momentum factor for the optimizer (default: None).
+            checkpoint_interval (int): How often to save a checkpoint during training.
             resume (bool, optional): Whether to resume training from a checkpoint (default: False).
             resume_epoch (int, optional): The epoch from which to resume training (default: None).
             **kwargs: Additional arguments specific to certain learning rate policies.
@@ -376,9 +378,6 @@ class ModelCompiler:
                 print("LR: {}".format(optimizer.param_groups[0]['lr']))
 
             print('time:', (datetime.now() - start_epoch).seconds)
-
-            # Adjust logger to resume status and save checkpoints in defined intervals.
-            checkpoint_interval = 20
 
             writer.add_scalars("Loss",
                                {"train loss": train_loss[t],
