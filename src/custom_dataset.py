@@ -153,24 +153,17 @@ class CropData(Dataset):
                 if random.randint(0, 1) and len(trans_flip_ls) >= 1:
                     trans_flip = random.sample(trans_flip_ls, 1)
                     img_chip, lbl_chip = flip(img_chip, lbl_chip, trans_flip[0])
+            
+                if random.randint(0, 1) and "rotate" in self.trans:
+                    deRotate = kwargs.get("rotation_degree", (-90, 90))
+                    img_chip, lbl_chip = center_rotate(img_chip, lbl_chip, deRotate)
                     
                 if random.randint(0, 1) and "resize" in self.trans:
                     scale_factor = kwargs.get("scale_factor", (0.75, 1.5))
                     img_chip, lbl_chip = re_scale(img_chip, lbl_chip.astype(np.uint8),
                                                   scale=scale_factor, crop_strategy="center")
                     
-                if random.randint(0, 1) and "rotate" in self.trans:
-                    deRotate = kwargs.get("rotation_degree", (-90, 90))
-                    #img_chip, lbl_chip = center_rotate(img_chip, lbl_chip, deRotate)
-                    img_chip, lbl_chip = rotate_image_and_label(img_chip, lbl_chip, deRotate)
-                    
-                if random.randint(0, 1) and 'shift_brightness' in self.trans:
-                    bshift_subs = kwargs.get("bshift_subs", (6, 6, 6))
-                    bshift_gamma_range = kwargs.get("bshift_gamma_range", (0.2, 2.0))
-                    patch_shift = kwargs.get("patch_shift", True)
-                    img_chip = shift_brightness(img_chip, gamma_range=bshift_gamma_range,
-                                                shift_subset=bshift_subs, patch_shift=patch_shift)
-            
+                
             label = torch.from_numpy(np.ascontiguousarray(lbl_chip)).long()
             # shape from (H,W,C) --> (C,H,W)
             img_chip = torch.from_numpy(img_chip.transpose((2, 0, 1))).float()

@@ -29,14 +29,13 @@ docker run --gpus all -it -p 8888:8888 -v "$(pwd)":/home/workdir -v /mnt/c/My_do
 
 This command will create a container based on the specified docker image and starts a jupyterLab session. Type `localhost:8888` in your browser and copy the provided token from the terminal to open the jupyterlab.
 
-Two opens are provided to interact with the code:
+To interact with the code:
 
 **Option 1 -- step-by-step from a jupyter notebook (Recommended to get familiar with the pipeline)**
     
-Open the jupyter notebook located at "notebooks/main.ipynb". Modify the "config" dictionary and run the cells as explained in the notebook.
+Open the jupyter notebook located at "notebooks/main.ipynb". 
+Modify the "default_config.yaml" or create your own config file and run the cells as explained in the notebook.
 
 **Option 2 -- Use the CLI** (To be completed)
-    
-First update the parameters in the "config.yaml" file. Parameters are explained inside the file.
-    
-Run the command below:
+
+
