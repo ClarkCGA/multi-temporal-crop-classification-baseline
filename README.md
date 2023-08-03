@@ -1,6 +1,7 @@
 # gfm-segmentation-baseline
 Baseline model for crop type segmentation as part of the GFM downstream task evaluations.
 
+IBM NASA Foundation Model for Earth Observations (GFM) is [here](https://huggingface.co/ibm-nasa-geospatial)
 The dataset used for training is [here](https://huggingface.co/datasets/ibm-nasa-geospatial/multi-temporal-crop-classification)
 
 
