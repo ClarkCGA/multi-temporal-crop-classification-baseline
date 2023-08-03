@@ -1,6 +1,8 @@
 # gfm-segmentation-baseline
 Baseline model for crop type segmentation as part of the GFM downstream task evaluations.
-The dataset used for training is [here](https://huggingface.co/datasets/ibm-nasa-geospatial/multi-temporal-crop-classification)
+
+The dataset used for training is <a href="https://huggingface.co/datasets/ibm-nasa-geospatial/multi-temporal-crop-classification" target="_blank">here</a>
+
 
 ## Steps to run the code using docker:
 
