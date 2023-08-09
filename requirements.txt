@@ -1,6 +1,7 @@
 jupyterlab
 ipywidgets
 matplotlib==3.7.1
+seaborn==0.12.2
 numpy==1.22.3
 pandas==1.5.2
 scikit-learn==1.2.2
@@ -11,3 +12,4 @@ tensorboard==2.12.2
 tqdm==4.65.0
 PyYAML==6.0
 geopandas==0.13.0
+click==8.1.3

@@ -1,0 +1,118 @@
+
+# Custom dataset params
+src_dir: /home/data
+train_dataset_name: chips_filtered_13_classes_complete
+train_csv_path: /home/workdir/train_ids.csv
+val_csv_path: /home/workdir/val_ids.csv
+test_csv_path: /home/workdir/test_ids.csv
+apply_normalization: true
+normal_strategy: z_value
+stat_procedure: gpb
+global_stats:
+  min: [124.0, 308.0, 191.0, 598.0, 423.0, 271.0]
+  max: [1207.0, 1765.0, 2366.0, 4945.0, 4646.0, 3897.0]
+  mean: [494.905781, 815.239594, 924.335066, 2968.881459, 2634.621962, 1739.579917]
+  std: [284.925432, 357.84876, 575.566823, 896.601013, 951.900334, 921.407808]
+transformations:
+- v_flip
+- h_flip
+- d_flip
+- rotate
+aug_params:
+  rotation_degree: [-180, -90, 90, 180]
+
+# DataLoader
+train_BatchSize: 10
+val_test_BatchSize: 3
+
+# Model initialization params
+n_classes: 14
+input_channels: 18
+filter_config: [64, 128, 256, 512, 1024, 1024]
+use_skipAtt: false
+train_dropout_rate: 0.15
+
+# Model compiler params
+working_dir: /home/workdir
+out_dir: output6
+class_mapping:
+  0: Unknown
+  1: Natural Vegetation
+  2: Forest
+  3: Corn
+  4: Soybeans
+  5: Wetlands
+  6: Developed/Barren
+  7: Open Water
+  8: Winter Wheat
+  9: Alfalfa
+  10: Fallow/Idle Cropland
+  11: Cotton
+  12: Sorghum
+  13: Other
+gpuDevices:
+- 0
+init_type: kaiming
+params_init: None
+freeze_params: None
+
+# Model fitting
+epochs: 100
+optimizer: sam
+LR: 0.011
+LR_policy: PolynomialLR
+criterion:
+    name: TverskyFocalLoss
+    weight:
+    - 0.0182553
+    - 0.03123664
+    - 0.02590038
+    - 0.03026126
+    - 0.04142966
+    - 0.04371284
+    - 0.15352935
+    - 0.07286951
+    - 0.10277024
+    - 0.10736637
+    - 0.1447082
+    - 0.17132445
+    - 0.0566358
+    ignore_index: 0
+    gamma: 0.9
+
+momentum: 0.95
+checkpoint_interval: 20
+resume: false
+resume_epoch: None
+lr_prams:
+  # StepLR & MultiStepLR
+  step_size: 3
+  milestones:
+  - 5
+  - 10
+  - 20
+  - 35
+  - 50
+  - 70
+  - 90
+  gamma: 0.98
+  # ReduceLROnPlateau
+  mode: triangular
+  factor: 0.8
+  patience: 3
+  threshold: 0.0001
+  threshold_mode: rel
+  min_lr: 3.0e-06
+  # PolynomialLR
+  max_decay_steps: 80
+  min_learning_rate: 1.0e-04
+  power: 0.85
+  # CyclicLR
+  base_lr: 3.0e-05
+  max_lr: 0.01
+  step_size_up: 1100
+  
+# Accuracy assessment
+val_metric_fname: validate_metrics_global_z_gpb.csv
+
+

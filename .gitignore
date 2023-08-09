@@ -1,0 +1,7 @@
+.ipynb_checkpoints/
+.jar/
+src/**/*.ipynb_checkpoints/
+src/**/__pycache__/
+notebooks/**/*.ipynb_checkpoints/
+output*/
+**/.DS_Store
