@@ -8,16 +8,22 @@ This project is funded by an award from NASA to the Center for Geospatial Analyt
 **Step 1-** Change directory to an empty folder in your machine and clone the repo.
 ```
 $ cd /to_empty/dir/on_host/
-$ git clone  git@github.com:ClarkCGA/gfm-segmentation-baseline.git
+$ git clone  git@github.com:ClarkCGA/multi-temporal-crop-classification-baseline.git
 ```
 
 **Step 2-** Make sure the Docker daemon is running and build the Docker image as following:
 ```
 docker build -t <image_name>:<tag> .
 ```
-
-**step 3-** Run the Docker image as a container:
+Example:
 ```
+docker build -t semseg_baseline:v1 .
+```
+
+**step 3-** Run the Docker image as a container from within the cloned folder:
+```
+cd path/to/cloned directory/
+
 docker run --gpus all -it -p 8888:8888 -v <path/to/the/cloned-repo/on-host>:/home/workdir -v <path/to/the/dataset/on-host>:/home/data  <image_name>:<tag>
 ```
 

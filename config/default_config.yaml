@@ -53,8 +53,8 @@ class_mapping:
 gpuDevices:
 - 0
 init_type: kaiming
-params_init: None
-freeze_params: None
+params_init: null
+freeze_params: null
 
 # Model fitting
 epochs: 100
@@ -83,7 +83,7 @@ criterion:
 momentum: 0.95
 checkpoint_interval: 20
 resume: false
-resume_epoch: None
+resume_epoch: null
 lr_prams:
   # StepLR & MultiStepLR
   step_size: 3
