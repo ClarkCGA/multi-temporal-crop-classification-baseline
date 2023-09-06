@@ -10,6 +10,8 @@ This project is funded by an award from NASA to the Center for Geospatial Analyt
 $ cd /to_empty/dir/on_host/
 
 $ git clone  git@github.com:ClarkCGA/multi-temporal-crop-classification-baseline.git
+
+$ cd path/to/cloned directory/
 ```
 
 **Step 2-** Make sure the Docker daemon is running and build the Docker image as following:
@@ -23,8 +25,6 @@ $ docker build -t semseg_baseline:v1 .
 
 **step 3-** Run the Docker image as a container from within the cloned folder:
 ```
-$ cd path/to/cloned directory/
-
 $ docker run --gpus all -it -p 8888:8888 -v <path/to/the/cloned-repo/on-host>:/home/workdir -v <path/to/the/dataset/on-host>:/home/data  <image_name>:<tag>
 ```
 
