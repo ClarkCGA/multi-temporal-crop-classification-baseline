@@ -60,11 +60,11 @@ def train_one_epoch(trainData, model, criterion, optimizer, scheduler, device, t
 
             def closure():
                 predictions = model(img)
-                loss = eval(criterion)(predictions, label)
+                loss = criterion(predictions, label)
                 loss.mean().backward()
                 return loss
             
-            loss = eval(criterion)(model(img), label)
+            loss = criterion(model(img), label)
             loss.mean().backward()
             optimizer.first_step(zero_grad=True)
 
@@ -76,11 +76,11 @@ def train_one_epoch(trainData, model, criterion, optimizer, scheduler, device, t
             # second forward-backward step
             def closure2():
                 predictions = model(img)
-                loss = eval(criterion)(predictions, label)
+                loss = criterion(predictions, label)
                 loss.mean().backward()
                 return loss
             
-            loss2 = eval(criterion)(model(img), label)
+            loss2 = criterion(model(img), label)
             loss2.mean().backward()
             optimizer.second_step(zero_grad=True)
 
@@ -92,7 +92,7 @@ def train_one_epoch(trainData, model, criterion, optimizer, scheduler, device, t
         else:
         
             model_out = model(img)
-            loss = eval(criterion)(model_out, label)
+            loss = criterion(model_out, label)
         
             epoch_loss += loss.item()
 
