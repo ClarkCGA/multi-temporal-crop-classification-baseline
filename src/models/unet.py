@@ -62,7 +62,6 @@ class DUC(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.pixl_shf = nn.PixelShuffle(upscale_factor=upscale)
 
-        initialize_weights(self)
         kernel = self.icnr(self.conv.weight, scale=upscale)
         self.conv.weight.data.copy_(kernel)
 
@@ -240,16 +239,16 @@ class Unet(nn.Module):
         self.conv1 = ConvBlock(filter_config[4] * 2, filter_config[4], num_conv_layers=2, drop_rate=dropout_rate)
 
         self.decoder_2 = UpconvBlock(filter_config[4], filter_config[3], upmode="deconv_2")  # 512x28x28
-        self.conv2 = ConvBlock(filter_config[4], filter_config[3], num_conv_layers=2, drop_rate=dropout_rate)
+        self.conv2 = ConvBlock(filter_config[3] * 2, filter_config[3], num_conv_layers=2, drop_rate=dropout_rate)
 
         self.decoder_3 = UpconvBlock(filter_config[3], filter_config[2], upmode="deconv_2")  # 256x56x56
-        self.conv3 = ConvBlock(filter_config[3], filter_config[2], num_conv_layers=2, drop_rate=dropout_rate)
+        self.conv3 = ConvBlock(filter_config[2] * 2, filter_config[2], num_conv_layers=2, drop_rate=dropout_rate)
 
         self.decoder_4 = UpconvBlock(filter_config[2], filter_config[1], upmode="deconv_2")  # 128x112x112
-        self.conv4 = ConvBlock(filter_config[2], filter_config[1], num_conv_layers=2, drop_rate=dropout_rate)
+        self.conv4 = ConvBlock(filter_config[1] * 2, filter_config[1], num_conv_layers=2, drop_rate=dropout_rate)
 
         self.decoder_5 = UpconvBlock(filter_config[1], filter_config[0], upmode="deconv_2")  # 64x224x224
-        self.conv5 = ConvBlock(filter_config[1], filter_config[0], num_conv_layers=2, drop_rate=dropout_rate)
+        self.conv5 = ConvBlock(filter_config[0] * 2, filter_config[0], num_conv_layers=2, drop_rate=dropout_rate)
 
         if self.use_skipAtt:
             self.Att1 = AdditiveAttentionBlock(F_g=filter_config[4], F_x=filter_config[4], F_inter=filter_config[3])

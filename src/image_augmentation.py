@@ -7,9 +7,7 @@ import cv2
 import random
 from collections.abc import Sequence
 from scipy.ndimage import rotate
-import numpy as np
-import random
-from scipy.ndimage import rotate
+
 
 
 def center_rotate(image, label, degree):

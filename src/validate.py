@@ -28,7 +28,7 @@ def validate_one_epoch(valData, model, criterion, device, val_loss=[]):
 
             pred = model(img)
 
-            loss = eval(criterion)(pred, label)
+            loss = criterion(pred, label)
             eval_epoch_loss += loss.item()
 
     print('validation loss: {:.4f}'.format(eval_epoch_loss / num_val_batches))
