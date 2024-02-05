@@ -17,9 +17,9 @@ from pathlib import Path
 from IPython.core.debugger import set_trace
 
 
-def load_data(data_path, usage, is_label=False, apply_normalization=False, 
+def load_data(data_path, usage, nodata=None, is_label=False, apply_normalization=False, 
               normal_strategy="z_value", stat_procedure="gpb", global_stats=None, 
-              dtype=np.float32, verbose=False):
+              dtype=np.float32, clip_val=None, verbose=False):
     r"""
     Open data using gdal, read it as an array and normalize it.
 
@@ -60,10 +60,12 @@ def load_data(data_path, usage, is_label=False, apply_normalization=False,
             return img
 
         else:
+            if nodata is None:
+                nodata = [src.nodata]
             meta = src.meta
             if apply_normalization:
                 img = do_normalization(src.read(), normal_strategy, stat_procedure,
-                                        bounds=(0, 1), clip_val=1, global_stats=global_stats)
+                                       clip_val=clip_val, global_stats=global_stats)
                 img = img.astype(dtype)
             else:
                 img = src.read()

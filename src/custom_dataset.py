@@ -63,6 +63,8 @@ class CropData(Dataset):
         self.stat_procedure = stat_procedure
         self.trans = trans
         self.kwargs = kwargs
+        self.nodata = self.kwargs.get("nodata", None)
+        self.clip_val = self.kwargs.get("clip_val", None)
 
         assert self.usage in ["train", "validation", "inference"], "Usage is not recognized."
 
@@ -93,11 +95,13 @@ class CropData(Dataset):
                     
                 img_chip = load_data(Path(src_dir) / self.dataset_name / img_fname,
                                      usage=self.usage,
+                                     nodata=self.nodata,
                                      is_label=False,
                                      apply_normalization=self.apply_normalization,
                                      normal_strategy=self.normal_strategy,
                                      stat_procedure=self.stat_procedure,
-                                     global_stats=global_stats)
+                                     global_stats=global_stats,
+                                     clip_val=self.clip_val)
                 img_chip = img_chip.transpose((1, 2, 0))
 
                 lbl_chip = load_data(Path(src_dir) / self.dataset_name / lbl_fname, 

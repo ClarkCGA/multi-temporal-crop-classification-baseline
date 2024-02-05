@@ -20,6 +20,8 @@ transformations:
 - rotate
 aug_params:
   rotation_degree: [-180, -90, 90, 180]
+  nodata: null
+  clip_val: 0
 
 # DataLoader
 train_BatchSize: 10
@@ -114,5 +116,6 @@ lr_prams:
   
 # Accuracy assessment
 val_metric_fname: validate_metrics_global_z_gpb.csv
+unknown_class_idx: 0
 
 

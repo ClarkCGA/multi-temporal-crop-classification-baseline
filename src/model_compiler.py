@@ -401,7 +401,7 @@ class ModelCompiler:
         print(f"----------- Training finished in {duration_format} -----------")
 
     
-    def accuracy_evaluation(self, eval_dataset, filename):
+    def accuracy_evaluation(self, eval_dataset, filename, unknown_class_idx=None):
         """
         Evaluate the accuracy of the model on the provided evaluation dataset.
 
@@ -419,7 +419,8 @@ class ModelCompiler:
 
         start = datetime.now()
 
-        do_accuracy_evaluation(self.model, eval_dataset, self.num_classes, self.class_mapping, filename)
+        do_accuracy_evaluation(self.model, eval_dataset, self.num_classes, self.class_mapping, 
+                               unknown_class_idx, filename)
 
         duration_in_sec = (datetime.now() - start).seconds
         print(

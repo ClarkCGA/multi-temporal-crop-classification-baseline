@@ -115,35 +115,37 @@ class Evaluator(object):
             self.confusion_matrix += self._generate_matrix(ref_img[i], 
                                                            pred_img[i])
 
-    def plot_confusion_matrix(self, class_mapping, save_path="confusion_matrix.png"):
-        # Remove the first row and column
-        conf_mat_without_unknown = self.confusion_matrix[1:, 1:]
-        
+    def plot_confusion_matrix(self, class_mapping, unknown_class_idx=None, save_path="confusion_matrix.png"):
         # Normalize the confusion matrix by row (i.e., by the true class)
-        row_sums = conf_mat_without_unknown.sum(axis=1, keepdims=True)
-        conf_mat_normalized = np.divide(conf_mat_without_unknown, row_sums, where=row_sums!=0)
-        
-        classes = [class_mapping[i] for i in range(1, self.num_class)]
+        row_sums = self.confusion_matrix.sum(axis=1, keepdims=True)
+        conf_mat_normalized = np.divide(self.confusion_matrix, row_sums, where=row_sums != 0)
+
+        if unknown_class_idx is not None:
+            # Mask to exclude the ignore_index class from visualization
+            mask = np.ones(len(conf_mat_normalized), dtype=bool)
+            mask[unknown_class_idx] = False
+            conf_mat_normalized = conf_mat_normalized[mask][:, mask]
+            classes = [class_mapping[i] for i in range(len(class_mapping)) if i != unknown_class_idx]
+        else:
+            classes = [class_mapping[i] for i in range(len(class_mapping))]
 
         # Create a dataframe for the seaborn heatmap
-        df_cm = pd.DataFrame(conf_mat_normalized,
-                            index = classes, 
-                            columns = classes)
-    
+        df_cm = pd.DataFrame(conf_mat_normalized, index=classes, columns=classes)
+
         # Create the figure
-        plt.figure(figsize=(self.num_class, self.num_class))
-    
+        plt.figure(figsize=(len(classes), len(classes)))
+
         # Use seaborn to plot the heatmap
-        heatmap = sns.heatmap(df_cm, annot=True, fmt=".3f", cmap='viridis', linewidths=.5, cbar=True)
-    
+        sns.heatmap(df_cm, annot=True, fmt=".3f", cmap='viridis', linewidths=.5, cbar=True)
+
         # Set the title and labels
         plt.title('Normalized Confusion Matrix')
         plt.xlabel('Predicted label')
         plt.ylabel('Reference label')
-    
+
         # Save the figure
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    
+
         plt.show()
 
 
@@ -159,7 +161,7 @@ class Evaluator(object):
         self.confusion_matrix = np.zeros((self.num_class,) * 2)
 
 
-def do_accuracy_evaluation(model, dataloader, num_classes, class_mapping, out_name=None):
+def do_accuracy_evaluation(model, dataloader, num_classes, class_mapping, unknown_class_idx=None, out_name=None):
     """
     Evaluate the performance of a trained model on a dataset and calculate various metrics.
     
@@ -168,6 +170,7 @@ def do_accuracy_evaluation(model, dataloader, num_classes, class_mapping, out_na
         dataloader (torch.utils.data.DataLoader): The dataloader for the evaluation dataset.
         num_classes (int): The number of target classes in the dataset.
         class_mapping (dict): A dictionary mapping class indices to class names.
+        unknown_class_idx (int): Class index for the 'nodata' or 'unknown' class to be excluded from metric calculation.
         out_name (str, optional): The path where the evaluation metrics are to be saved. If None, 
             metrics are not saved. Defaults to None.
     
@@ -222,7 +225,7 @@ def do_accuracy_evaluation(model, dataloader, num_classes, class_mapping, out_na
     }
 
     # print confusion matrix
-    evaluator.plot_confusion_matrix(class_mapping)
+    evaluator.plot_confusion_matrix(class_mapping, unknown_class_idx)
     
     if out_name:
         with open(out_name, mode="w", newline='') as file:
@@ -238,6 +241,8 @@ def do_accuracy_evaluation(model, dataloader, num_classes, class_mapping, out_na
             writer.writerow(["Class", "Accuracy", "IoU", "Precision", "Recall", "F1 Score"])
 
             for i in range(1, evaluator.num_class):
+                if unknown_class_idx is not None and i == unknown_class_idx:
+                    continue
                 class_name = class_mapping[i]
                 writer.writerow([class_name, classwise_overal_accuracy[i], IoU[i], 
                                  precision[i], recall[i], f1_score[i]])
